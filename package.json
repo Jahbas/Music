@@ -1,8 +1,16 @@
 {
-  "name": "spotify-like-browser-app",
+  "name": "liquid-music",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.1",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Jahbas/Liquid-Music.git"
+  },
+  "homepage": "https://github.com/Jahbas/Liquid-Music#readme",
+  "bugs": {
+    "url": "https://github.com/Jahbas/Liquid-Music/issues"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

@@ -6,3 +6,13 @@ dist/
 .env
 .env.local
 .DS_Store
+
+# Music files - never commit user's music
+music/
+*.mp3
+*.wav
+*.flac
+*.m4a
+*.aac
+*.ogg
+*.wma

@@ -1,0 +1,4618 @@
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+    min-height: 100vh;
+    overflow-x: hidden;
+    color: #ffffff;
+}
+
+/* Animated Background */
+.background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    overflow: hidden;
+}
+
+.gradient-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(100px);
+    opacity: 0.3;
+    animation: float 20s infinite ease-in-out;
+}
+
+.orb-1 {
+    width: 300px;
+    height: 300px;
+    background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+    top: 10%;
+    left: 10%;
+    animation-delay: 0s;
+}
+
+.orb-2 {
+    width: 400px;
+    height: 400px;
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    top: 50%;
+    right: 10%;
+    animation-delay: -7s;
+}
+
+.orb-3 {
+    width: 250px;
+    height: 250px;
+    background: linear-gradient(45deg, #f093fb, #f5576c);
+    bottom: 20%;
+    left: 50%;
+    animation-delay: -14s;
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px) rotate(0deg);
+    }
+    33% {
+        transform: translateY(-30px) rotate(120deg);
+    }
+    66% {
+        transform: translateY(20px) rotate(240deg);
+    }
+}
+
+/* Glass Card Effect */
+.glass-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Allow inner glows/shadows to extend beyond card horizontally */
+    overflow: visible;
+    clip-path: inset(0 -40px 0 -40px);
+}
+
+.glass-card:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+/* Prevent glass-card hover transform from affecting maximized player */
+.player.maximized.glass-card:hover {
+    transform: translate(-50%, -50%) !important;
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55) !important;
+}
+
+/* Container */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 20px 0;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 24px;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.logo i {
+    font-size: 28px;
+    background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.upload-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 24px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 15px;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.upload-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-2px);
+}
+
+.upload-btn i {
+    font-size: 16px;
+}
+
+.upload-section {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+/* Main Player */
+.player-container {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 30px;
+    flex: 1;
+    align-items: start;
+}
+
+.player {
+    padding: 40px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: box-shadow 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    will-change: box-shadow;
+}
+
+.player-maximize-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s ease;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+    z-index: 2;
+}
+
+.player-maximize-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.player.maximized .player-maximize-btn i {
+    content: '';
+}
+
+.player.maximized .player-maximize-btn {
+    background: rgba(255, 255, 255, 0.18);
+}
+
+/* Maximized player overlay mode */
+.player.maximized {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(96vw, 1280px);
+    height: auto;
+    max-height: 96vh;
+    z-index: 1200;
+    padding: 56px 48px;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+}
+
+.player-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(6px);
+    z-index: 1190;
+    opacity: 0;
+    transition: opacity 260ms ease;
+}
+
+body.modal-open {
+    overflow: hidden;
+}
+
+body.modal-open .player-overlay {
+    opacity: 1;
+}
+
+/* Scale up key inner elements when maximized */
+.player.maximized .album-art-container {
+    width: 280px;
+    height: 280px;
+    transform: translateZ(0) scale(1.06);
+}
+
+@media (min-width: 1024px) {
+    .player.maximized .album-art-container {
+        width: 320px;
+        height: 320px;
+        transform: translateZ(0) scale(1.08);
+    }
+}
+
+.player.maximized .track-info {
+    transform: translateZ(0) scale(1.06);
+}
+
+.player.maximized .controls {
+    gap: 26px;
+    transform: translateZ(0) scale(1.05);
+}
+
+.player::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, rgba(255, 107, 107, 0.1), rgba(78, 205, 196, 0.1));
+    border-radius: 20px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.player:hover::before {
+    opacity: 1;
+}
+
+/* Reduce motion/hover jitter while maximized */
+.player.maximized:hover::before {
+    opacity: 0.2;
+}
+
+.player.maximized .album-art-container:hover {
+    /* Keep the same scale as maximized base to avoid shrink/expand on hover */
+    transform: translateZ(0) scale(1.06);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+}
+
+@media (min-width: 1024px) {
+    .player.maximized .album-art-container:hover {
+        transform: translateZ(0) scale(1.08);
+    }
+}
+
+.player.maximized .control-btn:hover {
+    /* Dampen button hover to reduce dizziness when enlarged */
+    transform: translateY(-2px) scale(1.04);
+}
+
+/* Album Art */
+.album-art-container {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    margin: 0 auto 30px;
+    border-radius: 50%;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    transition: transform 280ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 280ms cubic-bezier(0.2, 0.8, 0.2, 1), width 260ms ease, height 260ms ease;
+}
+
+.album-art-container:hover {
+    transform: scale(1.05);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+}
+
+.album-art {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 60px;
+    color: rgba(255, 255, 255, 0.8);
+    position: relative;
+    z-index: 2;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.album-art.has-art {
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.album-art.has-art::before {
+    display: none;
+}
+
+.album-art.has-art i.fa-music {
+    display: none !important;
+}
+
+.album-art:not(.has-art) {
+    animation: spin 3s linear infinite;
+}
+
+.album-art.has-art {
+    animation: none !important;
+}
+
+.album-art:not(.has-art)::before {
+    content: '♪';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 60px;
+    color: rgba(255, 255, 255, 0.8);
+    z-index: 2;
+}
+
+.vinyl-effect {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 50%;
+    z-index: 3;
+}
+
+.album-art img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+/* Track Info */
+.track-info {
+    margin-bottom: 30px;
+    transition: transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    transform-origin: center;
+}
+
+.track-title {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #ffffff;
+}
+
+.track-artist {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 400;
+}
+
+.mute-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 8px 16px;
+    background: rgba(255, 0, 0, 0.2);
+    border: 1px solid rgba(255, 0, 0, 0.4);
+    border-radius: 20px;
+    color: #ff6b6b;
+    font-size: 0.9rem;
+    font-weight: 500;
+    animation: mutePulse 2s ease-in-out infinite;
+}
+
+.mute-indicator i {
+    font-size: 1rem;
+}
+
+@keyframes mutePulse {
+    0%, 100% {
+        opacity: 0.8;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.05);
+    }
+}
+
+/* Progress Bar */
+.progress-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.time {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+    min-width: 40px;
+}
+
+.progress-bar {
+    flex: 1;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.progress-bar:hover {
+    height: 8px;
+}
+
+.progress {
+    height: 100%;
+    /* Liquid single-hue look */
+    background: linear-gradient(180deg, rgba(100, 149, 237, 0.95), rgba(100, 149, 237, 0.8));
+    border-radius: 6px;
+    width: 0%;
+    box-shadow: inset 0 2px 6px rgba(255, 255, 255, 0.25), 0 6px 14px rgba(100, 149, 237, 0.35);
+    transition: width 0.1s ease, background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.progress-handle {
+    position: absolute;
+    top: 50%;
+    left: 0%;
+    transform: translate(-50%, -50%);
+    width: 16px;
+    height: 16px;
+    /* Droplet-like knob */
+    background: radial-gradient(circle at 30% 30%, #ffffff 0%, #e9f0ff 60%, #c7d9ff 100%);
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), 0 0 10px rgba(100, 149, 237, 0.5);
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.progress-bar:hover .progress-handle {
+    opacity: 1;
+}
+
+/* Controls */
+.controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 30px;
+    transition: transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.control-btn {
+    width: 50px;
+    height: 50px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.control-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-3px) scale(1.1);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.play-btn {
+    width: 70px;
+    height: 70px;
+    background: linear-gradient(180deg, rgba(100, 149, 237, 0.95), rgba(100, 149, 237, 0.8));
+    font-size: 24px;
+    box-shadow: 0 8px 25px rgba(100, 149, 237, 0.35);
+}
+
+.play-btn:hover {
+    background: linear-gradient(180deg, rgba(100, 149, 237, 1), rgba(100, 149, 237, 0.9));
+    transform: translateY(-5px) scale(1.15);
+    box-shadow: 0 15px 35px rgba(100, 149, 237, 0.5);
+}
+
+.control-btn.active {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: #ffffff;
+    border: 2px solid rgba(100, 149, 237, 0.8);
+    box-shadow: 
+        0 0 0 2px rgba(100, 149, 237, 0.4),
+        0 0 0 4px rgba(100, 149, 237, 0.2),
+        0 0 15px rgba(100, 149, 237, 0.3),
+        0 0 30px rgba(100, 149, 237, 0.2);
+}
+
+/* Volume Control */
+.volume-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    justify-content: center;
+    position: relative;
+}
+
+.volume-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.volume-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+.volume-bar {
+    width: 100px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.volume-bar:hover {
+    height: 6px;
+}
+
+.volume-progress {
+    height: 100%;
+    /* Liquid single-hue look */
+    background: linear-gradient(180deg, rgba(100, 149, 237, 0.95), rgba(100, 149, 237, 0.8));
+    border-radius: 4px;
+    width: 70%;
+    box-shadow: inset 0 2px 6px rgba(255, 255, 255, 0.25), 0 4px 10px rgba(100, 149, 237, 0.35);
+    transition: width 0.1s ease, background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.volume-handle {
+    position: absolute;
+    top: 50%;
+    left: 70%;
+    transform: translate(-50%, -50%);
+    width: 12px;
+    height: 12px;
+    /* Droplet-like knob */
+    background: radial-gradient(circle at 30% 30%, #ffffff 0%, #e9f0ff 60%, #c7d9ff 100%);
+    border-radius: 50%;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3), 0 0 8px rgba(100, 149, 237, 0.45);
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.volume-bar:hover .volume-handle {
+    opacity: 1;
+}
+
+.volume-percentage {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+    min-width: 35px;
+    text-align: center;
+    transition: color 0.3s ease;
+}
+
+.volume-percentage:hover {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+
+/* Playlist Management */
+.playlist-management {
+    padding: 30px;
+    height: fit-content;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Allow glow effects to extend beyond borders in dark theme */
+body[data-theme="dark"] .playlist-management {
+    overflow: visible !important;
+    clip-path: inset(0 -40px 0 -40px) !important;
+}
+
+/* Allow glow effects to extend beyond borders in glass theme */
+body[data-theme="glass"] .playlist-management {
+    overflow: visible !important;
+    clip-path: inset(0 -40px 0 -40px) !important;
+}
+
+/* Allow glow effects to extend beyond borders in new themes (same as dark theme) */
+body[data-theme="light"] .playlist-management {
+    overflow: visible !important;
+    clip-path: inset(0 -40px 0 -40px) !important;
+}
+
+body[data-theme="purple"] .playlist-management {
+    overflow: visible !important;
+    clip-path: inset(0 -40px 0 -40px) !important;
+}
+
+.playlist-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 0 10px 15px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.playlist-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 45px;
+    padding: 5px 10px;
+}
+
+.new-playlist-btn {
+    width: 35px;
+    height: 35px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.new-playlist-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+
+
+.playlist-tabs {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 20px;
+    padding: 10px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.playlist-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.playlist-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    min-width: fit-content;
+    height: 40px;
+}
+
+.playlist-tab:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+
+.playlist-tab.active {
+    background: linear-gradient(45deg, rgba(100, 149, 237, 0.2), rgba(100, 149, 237, 0.1));
+    border-color: rgba(100, 149, 237, 0.4);
+    box-shadow: 0 0 0 2px rgba(100, 149, 237, 0.3);
+    color: #ffffff;
+}
+
+/* Liquid glass drag-over glow */
+.playlist-tab.drag-over {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(78, 205, 196, 0.5);
+    box-shadow: 0 10px 30px rgba(78, 205, 196, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    transform: translateY(-2px);
+}
+
+.playlist-tab-cover {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    object-fit: cover;
+}
+
+.playlist-tab-remove {
+    width: 18px;
+    height: 18px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 107, 107, 0.2);
+    color: #ff6b6b;
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 8px;
+    opacity: 0;
+}
+
+.playlist-tab:hover .playlist-tab-remove {
+    opacity: 1;
+}
+
+.playlist-tab-remove:hover {
+    background: rgba(255, 107, 107, 0.3);
+    transform: scale(1.1);
+}
+
+/* Drop ripple for playlist tabs */
+.playlist-tab .drop-ripple {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8), rgba(78,205,196,0.6));
+    opacity: 0.9;
+    pointer-events: none;
+    animation: drop-ripple-animation 600ms ease-out forwards;
+    filter: blur(0.2px);
+}
+
+@keyframes drop-ripple-animation {
+    0% { transform: translate(-50%, -50%) scale(0.6); opacity: 0.95; }
+    70% { transform: translate(-50%, -50%) scale(6); opacity: 0.35; }
+    100% { transform: translate(-50%, -50%) scale(8); opacity: 0; }
+}
+
+.playlist-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.clear-btn {
+    width: 35px;
+    height: 35px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.clear-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+.playlist {
+    max-height: 400px;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 20px 10px;
+}
+
+/* Hide default scrollbar */
+.playlist::-webkit-scrollbar {
+    display: none;
+}
+
+
+
+.playlist-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.playlist-empty i {
+    font-size: 48px;
+    margin-bottom: 15px;
+    opacity: 0.5;
+}
+
+.playlist-empty p {
+    margin-bottom: 5px;
+}
+
+.playlist-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 8px 12px;
+    border-radius: 12px;
+    margin: 5px 0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    min-height: 50px;
+}
+
+.playlist-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(5px);
+}
+
+.playlist-item.active {
+    background: linear-gradient(45deg, rgba(100, 149, 237, 0.2), rgba(100, 149, 237, 0.1));
+    border-color: rgba(100, 149, 237, 0.4);
+}
+
+.playlist-item.selected {
+    background: linear-gradient(45deg, rgba(147, 51, 234, 0.4), rgba(147, 51, 234, 0.3)) !important;
+    border: 5px solid rgba(147, 51, 234, 0.8) !important;
+}
+
+.playlist-item.selected:hover {
+    background: linear-gradient(45deg, rgba(147, 51, 234, 0.25), rgba(147, 51, 234, 0.15));
+    border: 5px solid rgba(147, 51, 234, 0.7);
+}
+
+.playlist-item-info {
+    flex: 1;
+    text-align: left;
+    min-width: 0; /* Allow flex item to shrink below content size */
+    overflow: hidden; /* Prevent content from overflowing */
+}
+
+.playlist-item-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #ffffff;
+    margin-bottom: 4px;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.playlist-item-artist {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    line-height: 1.3;
+}
+
+.playlist-item-duration {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 500;
+    flex-shrink: 0; /* Prevent duration from shrinking */
+    min-width: 50px; /* Ensure minimum width for duration */
+    text-align: right; /* Right-align duration text */
+    margin-right: -20px; /* Move duration 20px closer to the right edge */
+}
+
+.playlist-item-remove {
+    width: 25px;
+    height: 25px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 107, 107, 0.2);
+    color: #ff6b6b;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    flex-shrink: 0; /* Prevent remove button from shrinking */
+}
+
+.playlist-item:hover .playlist-item-remove {
+    opacity: 1;
+}
+
+.playlist-item-remove:hover {
+    background: rgba(255, 107, 107, 0.3);
+    transform: scale(1.1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .player-container {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .header {
+        flex-direction: column;
+        gap: 20px;
+        text-align: center;
+    }
+    
+    .player {
+        padding: 30px 20px;
+    }
+    
+    .album-art-container {
+        width: 150px;
+        height: 150px;
+    }
+    
+    .controls {
+        gap: 15px;
+    }
+    
+    .control-btn {
+        width: 45px;
+        height: 45px;
+        font-size: 16px;
+    }
+    
+    .play-btn {
+        width: 60px;
+        height: 60px;
+        font-size: 20px;
+    }
+}
+
+/* Loading Animation */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading {
+    animation: spin 1s linear infinite;
+}
+
+/* Pulse Animation */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal {
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: scale(0.9) translateY(20px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modal-overlay.active .modal {
+    transform: scale(1) translateY(0);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 25px 30px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-header h3 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.modal-close {
+    width: 35px;
+    height: 35px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 107, 107, 0.2);
+    color: #ff6b6b;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-close:hover {
+    background: rgba(255, 107, 107, 0.3);
+    transform: scale(1.1);
+}
+
+.modal-content {
+    padding: 30px;
+}
+
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: #ffffff;
+    margin-bottom: 8px;
+}
+
+.form-group input[type="text"] {
+    width: 100%;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    color: #ffffff;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.form-group input[type="text"]:focus {
+    outline: none;
+    border-color: rgba(255, 107, 107, 0.5);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.form-group input[type="text"]::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.cover-upload {
+    width: 100%;
+    height: 120px;
+    border: 2px dashed rgba(255, 255, 255, 0.3);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.cover-upload:hover {
+    border-color: rgba(255, 107, 107, 0.5);
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.cover-upload i {
+    font-size: 32px;
+}
+
+.cover-preview {
+    position: relative;
+    width: 100%;
+    height: 120px;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.cover-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.remove-cover {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.7);
+    color: #ffffff;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.remove-cover:hover {
+    background: rgba(255, 107, 107, 0.8);
+    transform: scale(1.1);
+}
+
+.modal-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: flex-end;
+    margin-top: 30px;
+}
+
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Compact button variant for settings */
+.btn-compact {
+    padding: 8px 16px;
+    font-size: 13px;
+    border-radius: 8px;
+    gap: 6px;
+}
+
+/* Icon-only button variant */
+.btn-icon {
+    padding: 8px;
+    min-width: 36px;
+    justify-content: center;
+    border-radius: 8px;
+}
+
+.btn-icon i {
+    font-size: 14px;
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.btn-primary {
+    background: linear-gradient(180deg, rgba(100, 149, 237, 0.95), rgba(100, 149, 237, 0.8));
+    color: #ffffff;
+    box-shadow: 0 4px 15px rgba(100, 149, 237, 0.35);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(180deg, rgba(100, 149, 237, 1), rgba(100, 149, 237, 0.9));
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(100, 149, 237, 0.5);
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* Settings Panel */
+.settings-panel {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+/* Volume Setting Styles */
+.volume-setting {
+    width: 100%;
+}
+
+
+.volume-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 8px;
+    position: relative;
+    padding-left: 20px;
+}
+
+.volume-label::before {
+    content: "🎵";
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+.volume-control-setting {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-bottom: 8px;
+    width: 100%;
+}
+
+.volume-input {
+    width: 45px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+    padding: 0 6px;
+    outline: none;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+.volume-input::-webkit-outer-spin-button,
+.volume-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.volume-input:focus {
+    border-color: rgba(100, 149, 237, 0.6);
+    box-shadow: 0 0 0 2px rgba(100, 149, 237, 0.2);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.volume-input:hover {
+    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.volume-percent {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+    min-width: 12px;
+}
+
+.set-default-btn {
+    width: 100%;
+    height: 32px;
+    background: linear-gradient(45deg, rgba(100, 149, 237, 0.2), rgba(118, 75, 162, 0.2));
+    border: 1px solid rgba(100, 149, 237, 0.3);
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.set-default-btn:hover {
+    background: linear-gradient(45deg, rgba(100, 149, 237, 0.3), rgba(118, 75, 162, 0.3));
+    border-color: rgba(100, 149, 237, 0.5);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(100, 149, 237, 0.2);
+}
+
+.set-default-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(100, 149, 237, 0.3);
+}
+
+.volume-slider {
+    flex: 1;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+.volume-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.volume-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+.volume-slider::-moz-range-thumb:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.volume-value {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+    min-width: 35px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 4px 8px;
+    border-radius: 4px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Discord Panel */
+.discord-panel {
+    position: fixed;
+    bottom: 20px;
+    right: 80px;
+    z-index: 1000;
+    transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.artists-panel {
+    position: fixed;
+    bottom: 20px;
+    right: 200px;
+    z-index: 1000;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Collapse panel */
+.collapse-panel {
+    position: fixed;
+    bottom: 20px;
+    right: 260px;
+    z-index: 1000;
+    transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.collapse-panel.collapsed {
+    bottom: 20px;
+    right: 20px;
+}
+
+.collapse-btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(180deg, rgba(100, 149, 237, 0.95), rgba(100, 149, 237, 0.8));
+    border: none;
+    color: #ffffff;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 25px rgba(100, 149, 237, 0.35);
+}
+
+.collapse-btn:hover {
+    background: linear-gradient(180deg, rgba(100, 149, 237, 1), rgba(100, 149, 237, 0.9));
+    transform: translateY(-3px) scale(1.1);
+    box-shadow: 0 15px 35px rgba(100, 149, 237, 0.5);
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.collapse-btn:active {
+    transform: translateY(0);
+}
+
+.collapse-btn.expanded {
+    transform: rotate(180deg);
+    transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.collapse-btn.expanded i {
+    transform: rotate(180deg);
+    transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Hide bottom panels when collapsed */
+body.panels-collapsed .discord-panel {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(30px) scale(0.9);
+    transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.1s;
+}
+
+body.panels-collapsed .logs-panel {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(30px) scale(0.9);
+    transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.05s;
+}
+
+body.panels-collapsed .artists-panel {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(30px) scale(0.9);
+    transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0s;
+}
+
+body.panels-collapsed .collapse-panel {
+    right: 20px;
+}
+
+.logs-panel {
+    position: fixed;
+    bottom: 20px;
+    right: 140px;
+    z-index: 1000;
+    transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.artists-btn {
+    width: 50px;
+    height: 50px;
+    border: none;
+    border-radius: 50%;
+    background: linear-gradient(180deg, rgba(100, 149, 237, 0.95), rgba(100, 149, 237, 0.8));
+    color: #ffffff;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 8px 25px rgba(100, 149, 237, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.logs-btn {
+    width: 50px;
+    height: 50px;
+    border: none;
+    border-radius: 50%;
+    background: linear-gradient(180deg, rgba(100, 149, 237, 0.95), rgba(100, 149, 237, 0.8));
+    color: #ffffff;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 8px 25px rgba(100, 149, 237, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.artists-btn:hover {
+    transform: translateY(-3px) scale(1.1);
+    box-shadow: 0 15px 35px rgba(100, 149, 237, 0.5);
+    background: linear-gradient(180deg, rgba(100, 149, 237, 1), rgba(100, 149, 237, 0.9));
+}
+
+.logs-btn:hover {
+    transform: translateY(-3px) scale(1.1);
+    box-shadow: 0 15px 35px rgba(100, 149, 237, 0.5);
+}
+
+
+/* Artists modal list */
+.artists-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.artists-hint {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    font-style: italic;
+}
+
+.artists-list {
+    max-height: 400px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.artist-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.artist-item:hover {
+    background: rgba(255, 193, 7, 0.1);
+    border-color: rgba(255, 193, 7, 0.3);
+    transform: translateY(-1px);
+}
+
+.artist-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, rgba(255, 193, 7, 0.3), rgba(255, 193, 7, 0.1));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: rgba(255, 193, 7, 0.9);
+    border: 2px solid rgba(255, 193, 7, 0.3);
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.artist-initial {
+    font-size: 18px;
+    font-weight: 700;
+    color: rgba(255, 193, 7, 0.9);
+}
+
+.artist-info {
+    flex: 1;
+}
+
+.artist-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 2px;
+}
+
+.artist-details {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.artist-count {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+}
+
+.artist-separator {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.artist-albums {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+}
+
+.artist-album-list {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    font-style: italic;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.artist-action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: rgba(255, 193, 7, 0.1);
+    color: rgba(255, 193, 7, 0.8);
+    font-size: 14px;
+    transition: all 0.3s ease;
+    opacity: 0;
+}
+
+.artist-item:hover .artist-action {
+    opacity: 1;
+    background: rgba(255, 193, 7, 0.2);
+    transform: scale(1.1);
+}
+
+/* Logs modal list */
+.logs-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.logs-hint {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.logs-list {
+    max-height: 60vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.log-item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+}
+
+.log-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.log-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.log-meta {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.log-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.undo-btn {
+    padding: 8px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s ease;
+}
+
+.undo-btn:hover {
+    background: rgba(255, 255, 255, 0.18);
+}
+
+/* Toasts */
+.toast-container {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 1100;
+    pointer-events: none;
+}
+
+.toast-container-top-right {
+    bottom: auto;
+    left: auto;
+    top: 20px;
+    right: 20px;
+}
+
+/* Drag & Drop Overlay */
+.drop-overlay {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(6px);
+    z-index: 1300;
+    animation: fade-in 180ms ease forwards;
+}
+
+.drop-overlay.active {
+    display: flex;
+}
+
+.drop-content {
+    padding: 24px 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.drop-content i {
+    font-size: 28px;
+}
+
+.drop-content p {
+    font-size: 14px;
+    opacity: 0.9;
+    margin: 0;
+}
+
+.drop-content small {
+    font-size: 12px;
+    opacity: 0.7;
+    margin-top: 4px;
+}
+
+@keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.toast {
+    pointer-events: auto;
+    min-width: 260px;
+    max-width: 420px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(18px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #fff;
+    font: 500 13px 'Inter', sans-serif;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    opacity: 0;
+    transform: translateY(10px);
+    animation: toast-in 220ms cubic-bezier(0.2, 0.6, 0.2, 1) forwards;
+}
+
+.toast .icon {
+    flex-shrink: 0;
+}
+
+.toast .message {
+    flex: 1;
+}
+
+.toast .close {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.8);
+    cursor: pointer;
+    font-size: 14px;
+}
+
+@keyframes toast-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes toast-out {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(10px); }
+}
+
+.settings-toggle {
+    width: 50px;
+    height: 50px;
+    border: none;
+    border-radius: 50%;
+    background: linear-gradient(180deg, rgba(100, 149, 237, 0.95), rgba(100, 149, 237, 0.8));
+    color: #ffffff;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 8px 25px rgba(100, 149, 237, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.settings-toggle:hover {
+    transform: translateY(-3px) scale(1.1);
+    box-shadow: 0 15px 35px rgba(100, 149, 237, 0.5);
+}
+
+.settings-toggle:hover i {
+    animation: settings-rotate 1.5s linear infinite !important;
+}
+
+.settings-toggle:active {
+    transform: translateY(-1px) scale(1.05) !important;
+}
+
+.settings-toggle:active i {
+    animation: settings-rotate 1.5s linear infinite !important;
+}
+
+@keyframes settings-rotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes settings-click {
+    0% { transform: scale(1); }
+    50% { transform: scale(0.9); }
+    100% { transform: scale(1); }
+}
+
+.discord-btn {
+    width: 50px;
+    height: 50px;
+    border: none;
+    border-radius: 50%;
+    background: linear-gradient(180deg, rgba(100, 149, 237, 0.95), rgba(100, 149, 237, 0.8));
+    color: #ffffff;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 8px 25px rgba(100, 149, 237, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}
+
+.discord-btn:hover {
+    transform: translateY(-3px) scale(1.1);
+    box-shadow: 0 15px 35px rgba(100, 149, 237, 0.5);
+    background: linear-gradient(180deg, rgba(100, 149, 237, 1), rgba(100, 149, 237, 0.9));
+}
+
+.discord-btn:active {
+    transform: translateY(-1px) scale(1.05);
+}
+
+.settings-content {
+    position: absolute;
+    bottom: 60px;
+    right: 0;
+    width: 320px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(20px) scale(0.95);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.settings-content.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+}
+
+.settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 25px 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.settings-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.settings-close {
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 107, 107, 0.2);
+    color: #ff6b6b;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.settings-close:hover {
+    background: rgba(255, 107, 107, 0.3);
+    transform: scale(1.1);
+}
+
+.settings-body {
+    padding: 20px 25px 25px;
+    max-height: 400px;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    position: relative;
+}
+
+/* Hide default scrollbar */
+.settings-body::-webkit-scrollbar {
+    display: none;
+}
+
+
+.setting-group {
+    margin-bottom: 25px;
+    position: relative;
+}
+
+.setting-group:last-child {
+    margin-bottom: 0;
+}
+
+
+.setting-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 15px;
+    position: relative;
+}
+
+
+
+.setting-label i {
+    font-size: 16px;
+    opacity: 0.8;
+}
+
+
+
+.setting-option {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-top: 8px;
+}
+
+/* Compact setting option for buttons */
+.setting-option-compact {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 10px 12px;
+}
+
+.setting-option-compact .btn {
+    width: 100%;
+    margin: 0;
+}
+
+.setting-option-compact .setting-info {
+    margin: 0;
+    text-align: center;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background: #ffffff;
+    transition: all 0.3s ease;
+    border-radius: 50%;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+input:checked + .slider {
+    background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+.setting-info {
+    flex: 1;
+}
+
+.setting-name {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: #ffffff;
+    margin-bottom: 2px;
+}
+
+.setting-desc {
+    display: block;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    line-height: 1.3;
+}
+
+
+
+/* Performance Mode */
+body.performance-mode * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+}
+
+body.performance-mode .gradient-orb {
+    animation: none !important;
+}
+
+body.performance-mode .glass-card:hover {
+    transform: none !important;
+}
+
+body.performance-mode .control-btn:hover,
+body.performance-mode .upload-btn:hover,
+body.performance-mode .settings-toggle:hover {
+    transform: none !important;
+}
+
+body.performance-mode .settings-toggle:hover i {
+    animation: settings-rotate 1.5s linear infinite !important;
+}
+
+body.performance-mode .settings-toggle:active {
+    transform: translateY(-1px) scale(1.05) !important;
+}
+
+body.performance-mode .settings-toggle:active i {
+    animation: settings-rotate 1.5s linear infinite !important;
+}
+
+body.performance-mode .album-art-container:hover {
+    transform: none !important;
+}
+
+body.performance-mode .playlist-item:hover {
+    transform: none !important;
+}
+
+/* No Glass Effects */
+body.no-glass .glass-card {
+    background: rgba(255, 255, 255, 0.2) !important;
+    backdrop-filter: none !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+body.no-glass .settings-content {
+    backdrop-filter: none !important;
+}
+
+/* No Animated Background */
+body.no-bg .gradient-orb {
+    display: none !important;
+}
+
+/* Theme Selector */
+.theme-selector {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-top: 8px;
+}
+
+.theme-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 11px;
+    font-weight: 500;
+    min-height: 50px;
+}
+
+.theme-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    transform: translateY(-2px);
+}
+
+.theme-btn.active {
+    background: linear-gradient(45deg, rgba(100, 149, 237, 0.2), rgba(100, 149, 237, 0.1));
+    border-color: rgba(100, 149, 237, 0.4);
+    box-shadow: 0 0 0 2px rgba(100, 149, 237, 0.3);
+    color: #ffffff;
+}
+
+.theme-btn i {
+    font-size: 14px;
+    margin-bottom: 2px;
+}
+
+.theme-btn span {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Theme Styles */
+/* Glass Theme (Default) - The original blueish glassy design */
+body[data-theme="glass"] {
+    --primary-bg: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+    --primary-color: #6495ed;
+    --primary-gradient: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+    --secondary-gradient: linear-gradient(45deg, #667eea, #764ba2);
+    --accent-gradient: linear-gradient(45deg, #f093fb, #f5576c);
+}
+
+/* Dark Theme - Darker greyish black design */
+body[data-theme="dark"] {
+    --primary-bg: linear-gradient(135deg, #000000 0%, #050505 50%, #0f0f0f 100%);
+    --primary-color: #3a3a3a;
+    --primary-gradient: linear-gradient(45deg, #1a1a1a, #0a0a0a);
+    --secondary-gradient: linear-gradient(45deg, #2a2a2a, #1a1a1a);
+    --accent-gradient: linear-gradient(45deg, #3a3a3a, #2a2a2a);
+}
+
+/* Midnight Theme - Dark blue/teal design with glass effects */
+body[data-theme="light"] {
+    --primary-bg: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+    --primary-color: #0ea5e9;
+    --primary-gradient: linear-gradient(45deg, #0ea5e9, #0284c7);
+    --secondary-gradient: linear-gradient(45deg, #06b6d4, #0891b2);
+    --accent-gradient: linear-gradient(45deg, #14b8a6, #0d9488);
+}
+
+/* Purple Theme - Darker purple/blue design */
+body[data-theme="purple"] {
+    --primary-bg: linear-gradient(135deg, #0f0d2a 0%, #1e1a3f 50%, #2d1b69 100%);
+    --primary-color: #6d28d9;
+    --primary-gradient: linear-gradient(45deg, #5b21b6, #4c1d95);
+    --secondary-gradient: linear-gradient(45deg, #7c3aed, #6d28d9);
+    --accent-gradient: linear-gradient(45deg, #be185d, #9d174d);
+}
+
+body[data-theme="dark"] {
+    background: var(--primary-bg);
+}
+
+body[data-theme="light"] {
+    background: var(--primary-bg);
+}
+
+body[data-theme="purple"] {
+    background: var(--primary-bg);
+}
+
+body[data-theme="dark"] .gradient-orb.orb-1 {
+    background: linear-gradient(45deg, #1a1a1a, #0a0a0a);
+}
+
+body[data-theme="dark"] .gradient-orb.orb-2 {
+    background: linear-gradient(45deg, #2a2a2a, #1a1a1a);
+}
+
+body[data-theme="dark"] .gradient-orb.orb-3 {
+    background: linear-gradient(45deg, #3a3a3a, #2a2a2a);
+}
+
+/* Midnight Theme Orbs */
+body[data-theme="light"] .gradient-orb.orb-1 {
+    background: linear-gradient(45deg, #0ea5e9, #0284c7);
+}
+
+body[data-theme="light"] .gradient-orb.orb-2 {
+    background: linear-gradient(45deg, #06b6d4, #0891b2);
+}
+
+body[data-theme="light"] .gradient-orb.orb-3 {
+    background: linear-gradient(45deg, #14b8a6, #0d9488);
+}
+
+/* Purple Theme Orbs */
+body[data-theme="purple"] .gradient-orb.orb-1 {
+    background: linear-gradient(45deg, #7c3aed, #5b21b6);
+}
+
+body[data-theme="purple"] .gradient-orb.orb-2 {
+    background: linear-gradient(45deg, #a855f7, #9333ea);
+}
+
+body[data-theme="purple"] .gradient-orb.orb-3 {
+    background: linear-gradient(45deg, #ec4899, #be185d);
+}
+
+body[data-theme="dark"] .logo i {
+    background: linear-gradient(45deg, #3a3a3a, #2a2a2a);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+body[data-theme="light"] .logo i {
+    background: linear-gradient(45deg, #0ea5e9, #14b8a6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+body[data-theme="purple"] .logo i {
+    background: linear-gradient(45deg, #8b5cf6, #ec4899);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* More visible progress bars and volume sliders in dark theme */
+body[data-theme="dark"] .progress {
+    background: linear-gradient(180deg, rgba(100, 100, 100, 0.95), rgba(100, 100, 100, 0.8));
+    box-shadow: inset 0 2px 6px rgba(255, 255, 255, 0.2), 0 6px 14px rgba(100, 100, 100, 0.4);
+}
+
+body[data-theme="dark"] .volume-progress {
+    background: linear-gradient(180deg, rgba(100, 100, 100, 0.95), rgba(100, 100, 100, 0.8));
+    box-shadow: inset 0 2px 6px rgba(255, 255, 255, 0.2), 0 4px 10px rgba(100, 100, 100, 0.4);
+}
+
+/* Make progress bar background more visible in dark theme */
+body[data-theme="dark"] .progress-bar {
+    background: rgba(50, 50, 50, 0.4) !important;
+}
+
+body[data-theme="dark"] .volume-bar {
+    background: rgba(50, 50, 50, 0.4) !important;
+}
+
+/* Make progress handles more visible in dark theme */
+body[data-theme="dark"] .progress-handle {
+    background: radial-gradient(circle at 30% 30%, #ffffff 0%, #e0e0e0 60%, #c0c0c0 100%) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), 0 0 10px rgba(100, 100, 100, 0.6) !important;
+}
+
+body[data-theme="dark"] .volume-handle {
+    background: radial-gradient(circle at 30% 30%, #ffffff 0%, #e0e0e0 60%, #c0c0c0 100%) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5), 0 0 8px rgba(100, 100, 100, 0.6) !important;
+}
+
+body[data-theme="dark"] .volume-percentage {
+    color: rgba(200, 200, 200, 0.8) !important;
+}
+
+body[data-theme="dark"] .volume-percentage:hover {
+    color: rgba(220, 220, 220, 0.9) !important;
+}
+
+
+
+body[data-theme="dark"] .playlist-tab.active {
+    background: linear-gradient(45deg, rgba(60, 60, 60, 0.2), rgba(60, 60, 60, 0.1));
+    border: 2px solid rgba(100, 100, 100, 0.6);
+    box-shadow: 
+        0 0 0 2px rgba(100, 100, 100, 0.4),
+        0 0 0 4px rgba(100, 100, 100, 0.2),
+        0 0 15px rgba(100, 100, 100, 0.3),
+        0 0 30px rgba(100, 100, 100, 0.2),
+        0 0 50px rgba(100, 100, 100, 0.1) !important;
+}
+
+body[data-theme="dark"] .playlist-item.active {
+    background: linear-gradient(45deg, rgba(60, 60, 60, 0.2), rgba(60, 60, 60, 0.1));
+    border-color: rgba(140, 140, 140, 0.7);
+}
+
+body[data-theme="dark"] .btn-primary {
+    background: linear-gradient(180deg, rgba(60, 60, 60, 0.95), rgba(60, 60, 60, 0.8));
+    box-shadow: 0 4px 15px rgba(60, 60, 60, 0.2);
+}
+
+body[data-theme="dark"] .btn-primary:hover {
+    background: linear-gradient(180deg, rgba(60, 60, 60, 1), rgba(60, 60, 60, 0.9));
+    box-shadow: 0 8px 25px rgba(60, 60, 60, 0.3);
+}
+
+body[data-theme="dark"] .settings-toggle,
+body[data-theme="dark"] .artists-btn,
+body[data-theme="dark"] .logs-btn,
+body[data-theme="dark"] .discord-btn {
+    background: linear-gradient(180deg, rgba(60, 60, 60, 0.95), rgba(60, 60, 60, 0.8));
+    box-shadow: 0 8px 25px rgba(60, 60, 60, 0.2);
+}
+
+body[data-theme="dark"] .settings-toggle:hover,
+body[data-theme="dark"] .artists-btn:hover,
+body[data-theme="dark"] .logs-btn:hover,
+body[data-theme="dark"] .discord-btn:hover {
+    box-shadow: 0 15px 35px rgba(60, 60, 60, 0.3);
+}
+
+body[data-theme="dark"] .theme-btn.active {
+    background: linear-gradient(45deg, rgba(74, 74, 74, 0.2), rgba(74, 74, 74, 0.1));
+    border-color: rgba(74, 74, 74, 0.4);
+    box-shadow: 0 0 0 2px rgba(74, 74, 74, 0.3);
+}
+
+body[data-theme="dark"] .volume-label {
+    color: rgba(200, 200, 200, 0.9) !important;
+}
+
+body[data-theme="dark"] .volume-slider {
+    background: rgba(100, 100, 100, 0.3) !important;
+}
+
+body[data-theme="dark"] .volume-slider::-webkit-slider-thumb {
+    background: linear-gradient(45deg, #3a3a3a, #2a2a2a) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5) !important;
+}
+
+body[data-theme="dark"] .volume-slider::-webkit-slider-thumb:hover {
+    box-shadow: 0 4px 12px rgba(100, 100, 100, 0.4) !important;
+}
+
+body[data-theme="dark"] .volume-slider::-moz-range-thumb {
+    background: linear-gradient(45deg, #3a3a3a, #2a2a2a) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5) !important;
+}
+
+body[data-theme="dark"] .volume-slider::-moz-range-thumb:hover {
+    box-shadow: 0 4px 12px rgba(100, 100, 100, 0.4) !important;
+}
+
+body[data-theme="dark"] .volume-value {
+    color: rgba(180, 180, 180, 0.8) !important;
+    background: rgba(60, 60, 60, 0.3) !important;
+    border: 1px solid rgba(100, 100, 100, 0.3) !important;
+}
+
+body[data-theme="dark"] .volume-input {
+    background: rgba(60, 60, 60, 0.3) !important;
+    border: 1px solid rgba(100, 100, 100, 0.3) !important;
+    color: rgba(200, 200, 200, 0.9) !important;
+}
+
+body[data-theme="dark"] .volume-input:focus {
+    border-color: rgba(100, 100, 100, 0.6) !important;
+    box-shadow: 0 0 0 2px rgba(100, 100, 100, 0.2) !important;
+    background: rgba(60, 60, 60, 0.4) !important;
+}
+
+body[data-theme="dark"] .volume-input:hover {
+    border-color: rgba(120, 120, 120, 0.4) !important;
+    background: rgba(60, 60, 60, 0.35) !important;
+}
+
+body[data-theme="dark"] .volume-percent {
+    color: rgba(180, 180, 180, 0.8) !important;
+}
+
+/* ===== MIDNIGHT THEME STYLES ===== */
+
+/* Midnight theme progress bars and volume sliders */
+body[data-theme="light"] .progress {
+    background: linear-gradient(180deg, rgba(14, 165, 233, 0.95), rgba(2, 132, 199, 0.8));
+    box-shadow: inset 0 2px 6px rgba(255, 255, 255, 0.2), 0 6px 14px rgba(14, 165, 233, 0.4);
+}
+
+body[data-theme="light"] .volume-progress {
+    background: linear-gradient(180deg, rgba(14, 165, 233, 0.95), rgba(2, 132, 199, 0.8));
+    box-shadow: inset 0 2px 6px rgba(255, 255, 255, 0.2), 0 4px 10px rgba(14, 165, 233, 0.4);
+}
+
+body[data-theme="light"] .progress-bar {
+    background: rgba(14, 165, 233, 0.4) !important;
+}
+
+body[data-theme="light"] .volume-bar {
+    background: rgba(14, 165, 233, 0.4) !important;
+}
+
+body[data-theme="light"] .progress-handle {
+    background: radial-gradient(circle at 30% 30%, #ffffff 0%, #e0f2fe 60%, #bae6fd 100%) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), 0 0 10px rgba(14, 165, 233, 0.6) !important;
+}
+
+body[data-theme="light"] .volume-handle {
+    background: radial-gradient(circle at 30% 30%, #ffffff 0%, #e0f2fe 60%, #bae6fd 100%) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3), 0 0 8px rgba(14, 165, 233, 0.6) !important;
+}
+
+body[data-theme="light"] .volume-percentage {
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+body[data-theme="light"] .volume-percentage:hover {
+    color: rgba(255, 255, 255, 1) !important;
+}
+
+/* Midnight theme playlist styles */
+body[data-theme="light"] .playlist-tab.active {
+    background: linear-gradient(45deg, rgba(14, 165, 233, 0.2), rgba(2, 132, 199, 0.1));
+    border: 2px solid rgba(14, 165, 233, 0.6);
+    box-shadow: 
+        0 0 0 2px rgba(14, 165, 233, 0.4),
+        0 0 0 4px rgba(14, 165, 233, 0.2),
+        0 8px 25px rgba(14, 165, 233, 0.3);
+}
+
+body[data-theme="light"] .playlist-item.active {
+    background: linear-gradient(45deg, rgba(14, 165, 233, 0.2), rgba(2, 132, 199, 0.1));
+    border-color: rgba(14, 165, 233, 0.7);
+}
+
+body[data-theme="light"] .playlist-item.selected {
+    background: linear-gradient(45deg, rgba(14, 165, 233, 0.4), rgba(2, 132, 199, 0.3)) !important;
+    border: 5px solid rgba(14, 165, 233, 0.8) !important;
+}
+
+body[data-theme="light"] .playlist-item.selected:hover {
+    background: linear-gradient(45deg, rgba(14, 165, 233, 0.25), rgba(2, 132, 199, 0.15));
+    border: 5px solid rgba(14, 165, 233, 0.7);
+}
+
+
+/* Midnight theme buttons */
+body[data-theme="light"] .btn-primary {
+    background: linear-gradient(180deg, rgba(14, 165, 233, 0.95), rgba(2, 132, 199, 0.8));
+    box-shadow: 0 4px 15px rgba(14, 165, 233, 0.2);
+}
+
+body[data-theme="light"] .btn-primary:hover {
+    background: linear-gradient(180deg, rgba(14, 165, 233, 1), rgba(2, 132, 199, 0.9));
+    box-shadow: 0 8px 25px rgba(14, 165, 233, 0.3);
+}
+
+body[data-theme="light"] .settings-toggle,
+body[data-theme="light"] .artists-btn,
+body[data-theme="light"] .logs-btn,
+body[data-theme="light"] .discord-btn {
+    background: linear-gradient(180deg, rgba(14, 165, 233, 0.95), rgba(2, 132, 199, 0.8));
+    box-shadow: 0 8px 25px rgba(14, 165, 233, 0.2);
+}
+
+body[data-theme="light"] .settings-toggle:hover,
+body[data-theme="light"] .artists-btn:hover,
+body[data-theme="light"] .logs-btn:hover,
+body[data-theme="light"] .discord-btn:hover {
+    box-shadow: 0 15px 35px rgba(14, 165, 233, 0.3);
+}
+
+body[data-theme="light"] .theme-btn.active {
+    background: linear-gradient(45deg, rgba(14, 165, 233, 0.2), rgba(2, 132, 199, 0.1));
+    border-color: rgba(14, 165, 233, 0.4);
+    box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.3);
+}
+
+body[data-theme="light"] .volume-label {
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+body[data-theme="light"] .volume-slider {
+    background: rgba(14, 165, 233, 0.3) !important;
+}
+
+body[data-theme="light"] .volume-slider::-webkit-slider-thumb {
+    background: linear-gradient(45deg, #0ea5e9, #14b8a6) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+}
+
+body[data-theme="light"] .volume-slider::-webkit-slider-thumb:hover {
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4) !important;
+}
+
+body[data-theme="light"] .volume-slider::-moz-range-thumb {
+    background: linear-gradient(45deg, #0ea5e9, #14b8a6) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+}
+
+body[data-theme="light"] .volume-slider::-moz-range-thumb:hover {
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4) !important;
+}
+
+body[data-theme="light"] .volume-value {
+    color: rgba(255, 255, 255, 0.9) !important;
+    background: rgba(14, 165, 233, 0.3) !important;
+    border: 1px solid rgba(14, 165, 233, 0.3) !important;
+}
+
+body[data-theme="light"] .volume-input {
+    background: rgba(14, 165, 233, 0.3) !important;
+    border: 1px solid rgba(14, 165, 233, 0.3) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+body[data-theme="light"] .volume-input:focus {
+    border-color: rgba(14, 165, 233, 0.6) !important;
+    box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2) !important;
+    background: rgba(14, 165, 233, 0.4) !important;
+}
+
+body[data-theme="light"] .volume-input:hover {
+    border-color: rgba(14, 165, 233, 0.4) !important;
+    background: rgba(14, 165, 233, 0.35) !important;
+}
+
+body[data-theme="light"] .volume-percent {
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Midnight theme artist styles */
+body[data-theme="light"] .artist-item {
+    background: rgba(14, 165, 233, 0.2) !important;
+    border: 1px solid rgba(14, 165, 233, 0.2) !important;
+}
+
+body[data-theme="light"] .artist-item:hover {
+    background: rgba(14, 165, 233, 0.3) !important;
+    border-color: rgba(14, 165, 233, 0.4) !important;
+}
+
+body[data-theme="light"] .artist-avatar {
+    background: linear-gradient(45deg, rgba(14, 165, 233, 0.3), rgba(2, 132, 199, 0.1)) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+    border: 2px solid rgba(14, 165, 233, 0.3) !important;
+}
+
+body[data-theme="light"] .artist-initial {
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+body[data-theme="light"] .artist-name {
+    color: rgba(255, 255, 255, 0.95) !important;
+}
+
+body[data-theme="light"] .artist-count {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+body[data-theme="light"] .artist-albums {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+body[data-theme="light"] .artist-album-list {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+body[data-theme="light"] .artist-action {
+    background: rgba(14, 165, 233, 0.1) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+body[data-theme="light"] .artist-item:hover .artist-action {
+    background: rgba(14, 165, 233, 0.2) !important;
+}
+
+/* Midnight theme collapse button */
+body[data-theme="light"] .collapse-btn {
+    background: linear-gradient(180deg, rgba(14, 165, 233, 0.95), rgba(2, 132, 199, 0.8)) !important;
+    box-shadow: 0 8px 25px rgba(14, 165, 233, 0.2) !important;
+}
+
+body[data-theme="light"] .collapse-btn:hover {
+    background: linear-gradient(180deg, rgba(14, 165, 233, 1), rgba(2, 132, 199, 0.9)) !important;
+    box-shadow: 0 15px 35px rgba(14, 165, 233, 0.3) !important;
+}
+
+body[data-theme="light"] .set-default-btn {
+    background: linear-gradient(45deg, rgba(14, 165, 233, 0.3), rgba(2, 132, 199, 0.3)) !important;
+    border: 1px solid rgba(14, 165, 233, 0.4) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+body[data-theme="light"] .set-default-btn:hover {
+    background: linear-gradient(45deg, rgba(14, 165, 233, 0.4), rgba(2, 132, 199, 0.4)) !important;
+    box-shadow: 0 8px 25px rgba(14, 165, 233, 0.3) !important;
+}
+
+/* ===== PURPLE THEME STYLES ===== */
+
+/* Purple theme progress bars and volume sliders */
+body[data-theme="purple"] .progress {
+    background: linear-gradient(180deg, rgba(109, 40, 217, 0.95), rgba(91, 33, 182, 0.8));
+    box-shadow: inset 0 2px 6px rgba(255, 255, 255, 0.2), 0 6px 14px rgba(109, 40, 217, 0.4);
+}
+
+body[data-theme="purple"] .volume-progress {
+    background: linear-gradient(180deg, rgba(109, 40, 217, 0.95), rgba(91, 33, 182, 0.8));
+    box-shadow: inset 0 2px 6px rgba(255, 255, 255, 0.2), 0 4px 10px rgba(109, 40, 217, 0.4);
+}
+
+body[data-theme="purple"] .progress-bar {
+    background: rgba(190, 24, 93, 0.4) !important;
+}
+
+body[data-theme="purple"] .volume-bar {
+    background: rgba(190, 24, 93, 0.4) !important;
+}
+
+body[data-theme="purple"] .progress-handle {
+    background: radial-gradient(circle at 30% 30%, #ffffff 0%, #f3e8ff 60%, #e9d5ff 100%) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), 0 0 10px rgba(109, 40, 217, 0.6) !important;
+}
+
+body[data-theme="purple"] .volume-handle {
+    background: radial-gradient(circle at 30% 30%, #ffffff 0%, #f3e8ff 60%, #e9d5ff 100%) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3), 0 0 8px rgba(109, 40, 217, 0.6) !important;
+}
+
+body[data-theme="purple"] .volume-percentage {
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+body[data-theme="purple"] .volume-percentage:hover {
+    color: rgba(255, 255, 255, 1) !important;
+}
+
+/* Purple theme playlist styles */
+body[data-theme="purple"] .playlist-tab.active {
+    background: linear-gradient(45deg, rgba(139, 92, 246, 0.2), rgba(124, 58, 237, 0.1));
+    border: 2px solid rgba(139, 92, 246, 0.6);
+    box-shadow: 
+        0 0 0 2px rgba(139, 92, 246, 0.4),
+        0 0 0 4px rgba(139, 92, 246, 0.2),
+        0 8px 25px rgba(139, 92, 246, 0.3);
+}
+
+body[data-theme="purple"] .playlist-item.active {
+    background: linear-gradient(45deg, rgba(139, 92, 246, 0.2), rgba(124, 58, 237, 0.1));
+    border-color: rgba(139, 92, 246, 0.7);
+}
+
+
+/* Purple theme buttons */
+body[data-theme="purple"] .btn-primary {
+    background: linear-gradient(180deg, rgba(139, 92, 246, 0.95), rgba(124, 58, 237, 0.8));
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.2);
+}
+
+body[data-theme="purple"] .btn-primary:hover {
+    background: linear-gradient(180deg, rgba(139, 92, 246, 1), rgba(124, 58, 237, 0.9));
+    box-shadow: 0 8px 25px rgba(139, 92, 246, 0.3);
+}
+
+body[data-theme="purple"] .settings-toggle,
+body[data-theme="purple"] .artists-btn,
+body[data-theme="purple"] .logs-btn,
+body[data-theme="purple"] .discord-btn {
+    background: linear-gradient(180deg, rgba(139, 92, 246, 0.95), rgba(124, 58, 237, 0.8));
+    box-shadow: 0 8px 25px rgba(139, 92, 246, 0.2);
+}
+
+body[data-theme="purple"] .settings-toggle:hover,
+body[data-theme="purple"] .artists-btn:hover,
+body[data-theme="purple"] .logs-btn:hover,
+body[data-theme="purple"] .discord-btn:hover {
+    box-shadow: 0 15px 35px rgba(139, 92, 246, 0.3);
+}
+
+body[data-theme="purple"] .theme-btn.active {
+    background: linear-gradient(45deg, rgba(139, 92, 246, 0.2), rgba(124, 58, 237, 0.1));
+    border-color: rgba(139, 92, 246, 0.4);
+    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.3);
+}
+
+body[data-theme="purple"] .volume-label {
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+body[data-theme="purple"] .volume-slider {
+    background: rgba(139, 92, 246, 0.3) !important;
+}
+
+body[data-theme="purple"] .volume-slider::-webkit-slider-thumb {
+    background: linear-gradient(45deg, #8b5cf6, #ec4899) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+}
+
+body[data-theme="purple"] .volume-slider::-webkit-slider-thumb:hover {
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4) !important;
+}
+
+body[data-theme="purple"] .volume-slider::-moz-range-thumb {
+    background: linear-gradient(45deg, #8b5cf6, #ec4899) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+}
+
+body[data-theme="purple"] .volume-slider::-moz-range-thumb:hover {
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4) !important;
+}
+
+body[data-theme="purple"] .volume-value {
+    color: rgba(255, 255, 255, 0.9) !important;
+    background: rgba(139, 92, 246, 0.3) !important;
+    border: 1px solid rgba(139, 92, 246, 0.3) !important;
+}
+
+body[data-theme="purple"] .volume-input {
+    background: rgba(139, 92, 246, 0.3) !important;
+    border: 1px solid rgba(139, 92, 246, 0.3) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+body[data-theme="purple"] .volume-input:focus {
+    border-color: rgba(139, 92, 246, 0.6) !important;
+    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2) !important;
+    background: rgba(139, 92, 246, 0.4) !important;
+}
+
+body[data-theme="purple"] .volume-input:hover {
+    border-color: rgba(139, 92, 246, 0.4) !important;
+    background: rgba(139, 92, 246, 0.35) !important;
+}
+
+body[data-theme="purple"] .volume-percent {
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Purple theme artist styles */
+body[data-theme="purple"] .artist-item {
+    background: rgba(139, 92, 246, 0.2) !important;
+    border: 1px solid rgba(139, 92, 246, 0.2) !important;
+}
+
+body[data-theme="purple"] .artist-item:hover {
+    background: rgba(139, 92, 246, 0.3) !important;
+    border-color: rgba(139, 92, 246, 0.4) !important;
+}
+
+body[data-theme="purple"] .artist-avatar {
+    background: linear-gradient(45deg, rgba(139, 92, 246, 0.3), rgba(124, 58, 237, 0.1)) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+    border: 2px solid rgba(139, 92, 246, 0.3) !important;
+}
+
+body[data-theme="purple"] .artist-initial {
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+body[data-theme="purple"] .artist-name {
+    color: rgba(255, 255, 255, 0.95) !important;
+}
+
+body[data-theme="purple"] .artist-count {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+body[data-theme="purple"] .artist-albums {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+body[data-theme="purple"] .artist-album-list {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+body[data-theme="purple"] .artist-action {
+    background: rgba(139, 92, 246, 0.1) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+body[data-theme="purple"] .artist-item:hover .artist-action {
+    background: rgba(139, 92, 246, 0.2) !important;
+}
+
+/* Purple theme collapse button */
+body[data-theme="purple"] .collapse-btn {
+    background: linear-gradient(180deg, rgba(139, 92, 246, 0.95), rgba(124, 58, 237, 0.8)) !important;
+    box-shadow: 0 8px 25px rgba(139, 92, 246, 0.2) !important;
+}
+
+body[data-theme="purple"] .collapse-btn:hover {
+    background: linear-gradient(180deg, rgba(139, 92, 246, 1), rgba(124, 58, 237, 0.9)) !important;
+    box-shadow: 0 15px 35px rgba(139, 92, 246, 0.3) !important;
+}
+
+body[data-theme="purple"] .set-default-btn {
+    background: linear-gradient(45deg, rgba(139, 92, 246, 0.3), rgba(124, 58, 237, 0.3)) !important;
+    border: 1px solid rgba(139, 92, 246, 0.4) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+body[data-theme="purple"] .set-default-btn:hover {
+    background: linear-gradient(45deg, rgba(139, 92, 246, 0.4), rgba(124, 58, 237, 0.4)) !important;
+    box-shadow: 0 8px 25px rgba(139, 92, 246, 0.3) !important;
+}
+
+/* ===== THEME-SPECIFIC PLAY BUTTONS ===== */
+
+/* Midnight theme play button */
+body[data-theme="light"] .play-btn {
+    background: linear-gradient(180deg, rgba(14, 165, 233, 0.95), rgba(2, 132, 199, 0.8)) !important;
+    border: 2px solid rgba(14, 165, 233, 0.6) !important;
+    box-shadow: 
+        0 0 0 2px rgba(14, 165, 233, 0.4),
+        0 0 0 4px rgba(14, 165, 233, 0.2),
+        0 8px 25px rgba(14, 165, 233, 0.35);
+    transition: all 0.3s ease;
+}
+
+body[data-theme="light"] .play-btn:hover {
+    background: linear-gradient(180deg, rgba(14, 165, 233, 1), rgba(2, 132, 199, 0.9)) !important;
+    border: 2px solid rgba(14, 165, 233, 0.8) !important;
+    box-shadow: 
+        0 0 0 2px rgba(14, 165, 233, 0.6),
+        0 0 0 4px rgba(14, 165, 233, 0.3),
+        0 15px 35px rgba(14, 165, 233, 0.5);
+    transform: translateY(-5px) scale(1.15);
+}
+
+/* Purple theme play button */
+body[data-theme="purple"] .play-btn {
+    background: linear-gradient(180deg, rgba(139, 92, 246, 0.95), rgba(124, 58, 237, 0.8)) !important;
+    border: 2px solid rgba(139, 92, 246, 0.6) !important;
+    box-shadow: 
+        0 0 0 2px rgba(139, 92, 246, 0.4),
+        0 0 0 4px rgba(139, 92, 246, 0.2),
+        0 8px 25px rgba(139, 92, 246, 0.35);
+    transition: all 0.3s ease;
+}
+
+body[data-theme="purple"] .play-btn:hover {
+    background: linear-gradient(180deg, rgba(139, 92, 246, 1), rgba(124, 58, 237, 0.9)) !important;
+    border: 2px solid rgba(139, 92, 246, 0.8) !important;
+    box-shadow: 
+        0 0 0 2px rgba(139, 92, 246, 0.6),
+        0 0 0 4px rgba(139, 92, 246, 0.3),
+        0 15px 35px rgba(139, 92, 246, 0.5);
+    transform: translateY(-5px) scale(1.15);
+}
+
+/* ===== THEME-SPECIFIC UPLOAD BUTTONS ===== */
+
+/* Midnight theme upload buttons */
+body[data-theme="light"] .upload-btn {
+    background: rgba(14, 165, 233, 0.2) !important;
+    border: 2px solid rgba(14, 165, 233, 0.4) !important;
+}
+
+body[data-theme="light"] .upload-btn:hover {
+    background: rgba(14, 165, 233, 0.3) !important;
+    border-color: rgba(14, 165, 233, 0.6) !important;
+    transform: translateY(-2px);
+}
+
+/* Purple theme upload buttons */
+body[data-theme="purple"] .upload-btn {
+    background: rgba(139, 92, 246, 0.2) !important;
+    border: 2px solid rgba(139, 92, 246, 0.4) !important;
+}
+
+body[data-theme="purple"] .upload-btn:hover {
+    background: rgba(139, 92, 246, 0.3) !important;
+    border-color: rgba(139, 92, 246, 0.6) !important;
+    transform: translateY(-2px);
+}
+
+/* ===== THEME-SPECIFIC CONTROL BUTTONS ===== */
+
+/* Midnight theme control buttons */
+body[data-theme="light"] .control-btn {
+    background: rgba(14, 165, 233, 0.2) !important;
+}
+
+body[data-theme="light"] .control-btn:hover {
+    background: rgba(14, 165, 233, 0.3) !important;
+    transform: translateY(-3px) scale(1.1);
+    box-shadow: 0 10px 25px rgba(14, 165, 233, 0.3);
+}
+
+body[data-theme="light"] .control-btn.active {
+    background: linear-gradient(45deg, #0ea5e9, #14b8a6) !important;
+    color: #ffffff !important;
+    border: 2px solid rgba(14, 165, 233, 0.8) !important;
+    box-shadow: 
+        0 0 0 2px rgba(14, 165, 233, 0.4),
+        0 0 0 4px rgba(14, 165, 233, 0.2),
+        0 8px 25px rgba(14, 165, 233, 0.3);
+}
+
+/* Purple theme control buttons */
+body[data-theme="purple"] .control-btn {
+    background: rgba(139, 92, 246, 0.2) !important;
+}
+
+body[data-theme="purple"] .control-btn:hover {
+    background: rgba(139, 92, 246, 0.3) !important;
+    transform: translateY(-3px) scale(1.1);
+    box-shadow: 0 10px 25px rgba(139, 92, 246, 0.3);
+}
+
+body[data-theme="purple"] .control-btn.active {
+    background: linear-gradient(45deg, #8b5cf6, #ec4899) !important;
+    color: #ffffff !important;
+    border: 2px solid rgba(139, 92, 246, 0.8) !important;
+    box-shadow: 
+        0 0 0 2px rgba(139, 92, 246, 0.4),
+        0 0 0 4px rgba(139, 92, 246, 0.2),
+        0 8px 25px rgba(139, 92, 246, 0.3);
+}
+
+/* ===== THEME-SPECIFIC SWITCHES ===== */
+
+/* Midnight theme switches */
+body[data-theme="light"] .slider {
+    background: rgba(14, 165, 233, 0.3) !important;
+}
+
+body[data-theme="light"] .slider:before {
+    background: rgba(255, 255, 255, 0.9) !important;
+}
+
+body[data-theme="light"] input:checked + .slider {
+    background: linear-gradient(45deg, #0ea5e9, #14b8a6) !important;
+    box-shadow: 
+        0 0 10px rgba(14, 165, 233, 0.3),
+        0 0 20px rgba(14, 165, 233, 0.2),
+        0 0 30px rgba(14, 165, 233, 0.1) !important;
+}
+
+body[data-theme="light"] input:checked + .slider:before {
+    background: #ffffff !important;
+    box-shadow: 
+        0 2px 6px rgba(0, 0, 0, 0.3),
+        0 0 8px rgba(14, 165, 233, 0.4),
+        0 0 15px rgba(14, 165, 233, 0.2) !important;
+}
+
+/* Purple theme switches */
+body[data-theme="purple"] .slider {
+    background: rgba(139, 92, 246, 0.3) !important;
+}
+
+body[data-theme="purple"] .slider:before {
+    background: rgba(255, 255, 255, 0.9) !important;
+}
+
+body[data-theme="purple"] input:checked + .slider {
+    background: linear-gradient(45deg, #8b5cf6, #ec4899) !important;
+    box-shadow: 
+        0 0 10px rgba(139, 92, 246, 0.3),
+        0 0 20px rgba(139, 92, 246, 0.2),
+        0 0 30px rgba(139, 92, 246, 0.1) !important;
+}
+
+body[data-theme="purple"] input:checked + .slider:before {
+    background: #ffffff !important;
+    box-shadow: 
+        0 2px 6px rgba(0, 0, 0, 0.3),
+        0 0 8px rgba(139, 92, 246, 0.4),
+        0 0 15px rgba(139, 92, 246, 0.2) !important;
+}
+
+/* ===== THEME-SPECIFIC NOTIFICATIONS ===== */
+
+/* Midnight theme notifications */
+body[data-theme="light"] .toast {
+    background: rgba(14, 165, 233, 0.12) !important;
+    border: 1px solid rgba(14, 165, 233, 0.25) !important;
+    box-shadow: 0 12px 30px rgba(14, 165, 233, 0.35), inset 0 0 0 1px rgba(14, 165, 233, 0.15) !important;
+}
+
+/* Purple theme notifications */
+body[data-theme="purple"] .toast {
+    background: rgba(139, 92, 246, 0.12) !important;
+    border: 1px solid rgba(139, 92, 246, 0.25) !important;
+    box-shadow: 0 12px 30px rgba(139, 92, 246, 0.35), inset 0 0 0 1px rgba(139, 92, 246, 0.15) !important;
+}
+
+/* ===== THEME-SPECIFIC CLOCK ===== */
+
+/* Midnight theme clock */
+body[data-theme="light"] .clock {
+    background: rgba(14, 165, 233, 0.2) !important;
+    border: 2px solid rgba(14, 165, 233, 0.4) !important;
+    box-shadow: 0 8px 25px rgba(14, 165, 233, 0.2) !important;
+}
+
+/* Purple theme clock */
+body[data-theme="purple"] .clock {
+    background: rgba(139, 92, 246, 0.2) !important;
+    border: 2px solid rgba(139, 92, 246, 0.4) !important;
+    box-shadow: 0 8px 25px rgba(139, 92, 246, 0.2) !important;
+}
+
+/* ===== THEME-SPECIFIC GLASS CARDS ===== */
+
+/* Midnight theme glass cards */
+body[data-theme="light"] .glass-card {
+    background: rgba(14, 165, 233, 0.15) !important;
+    border-color: rgba(14, 165, 233, 0.3) !important;
+}
+
+body[data-theme="light"] .glass-card:hover {
+    background: rgba(14, 165, 233, 0.2) !important;
+    border-color: rgba(14, 165, 233, 0.4) !important;
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(14, 165, 233, 0.4);
+}
+
+body[data-theme="light"] .player.maximized.glass-card:hover {
+    transform: translate(-50%, -50%) !important;
+    background: rgba(14, 165, 233, 0.2) !important;
+    border-color: rgba(14, 165, 233, 0.4) !important;
+}
+
+/* Purple theme glass cards */
+body[data-theme="purple"] .glass-card {
+    background: rgba(139, 92, 246, 0.15) !important;
+    border-color: rgba(139, 92, 246, 0.3) !important;
+}
+
+body[data-theme="purple"] .glass-card:hover {
+    background: rgba(139, 92, 246, 0.2) !important;
+    border-color: rgba(139, 92, 246, 0.4) !important;
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(139, 92, 246, 0.4);
+}
+
+body[data-theme="purple"] .player.maximized.glass-card:hover {
+    transform: translate(-50%, -50%) !important;
+    background: rgba(139, 92, 246, 0.2) !important;
+    border-color: rgba(139, 92, 246, 0.4) !important;
+}
+
+body[data-theme="dark"] .artist-item {
+    background: rgba(60, 60, 60, 0.2) !important;
+    border: 1px solid rgba(100, 100, 100, 0.2) !important;
+}
+
+body[data-theme="dark"] .artist-item:hover {
+    background: rgba(100, 100, 100, 0.3) !important;
+    border-color: rgba(100, 100, 100, 0.4) !important;
+}
+
+body[data-theme="dark"] .artist-avatar {
+    background: linear-gradient(45deg, rgba(100, 100, 100, 0.3), rgba(100, 100, 100, 0.1)) !important;
+    color: rgba(200, 200, 200, 0.8) !important;
+    border: 2px solid rgba(100, 100, 100, 0.3) !important;
+}
+
+body[data-theme="dark"] .artist-initial {
+    color: rgba(200, 200, 200, 0.8) !important;
+}
+
+body[data-theme="dark"] .artist-name {
+    color: rgba(220, 220, 220, 0.9) !important;
+}
+
+body[data-theme="dark"] .artist-count {
+    color: rgba(180, 180, 180, 0.7) !important;
+}
+
+body[data-theme="dark"] .artist-albums {
+    color: rgba(180, 180, 180, 0.7) !important;
+}
+
+body[data-theme="dark"] .artist-album-list {
+    color: rgba(160, 160, 160, 0.5) !important;
+}
+
+body[data-theme="dark"] .artist-action {
+    background: rgba(100, 100, 100, 0.1) !important;
+    color: rgba(200, 200, 200, 0.8) !important;
+}
+
+body[data-theme="dark"] .artist-item:hover .artist-action {
+    background: rgba(100, 100, 100, 0.2) !important;
+}
+
+/* Dark theme collapse button */
+body[data-theme="dark"] .collapse-btn {
+    background: linear-gradient(180deg, rgba(60, 60, 60, 0.95), rgba(60, 60, 60, 0.8)) !important;
+    box-shadow: 0 8px 25px rgba(60, 60, 60, 0.2) !important;
+}
+
+body[data-theme="dark"] .collapse-btn:hover {
+    background: linear-gradient(180deg, rgba(60, 60, 60, 1), rgba(60, 60, 60, 0.9)) !important;
+    box-shadow: 0 15px 35px rgba(60, 60, 60, 0.3) !important;
+}
+
+
+
+body[data-theme="dark"] .set-default-btn {
+    background: linear-gradient(45deg, rgba(60, 60, 60, 0.3), rgba(40, 40, 40, 0.3)) !important;
+    border: 1px solid rgba(100, 100, 100, 0.4) !important;
+    color: rgba(200, 200, 200, 0.9) !important;
+}
+
+body[data-theme="dark"] .set-default-btn:hover {
+    background: linear-gradient(45deg, rgba(60, 60, 60, 0.4), rgba(40, 40, 40, 0.4)) !important;
+    border-color: rgba(120, 120, 120, 0.6) !important;
+    box-shadow: 0 4px 12px rgba(100, 100, 100, 0.2) !important;
+}
+
+body[data-theme="dark"] .set-default-btn:active {
+    box-shadow: 0 2px 6px rgba(100, 100, 100, 0.3) !important;
+}
+
+body[data-theme="dark"] .control-btn.active {
+    background: linear-gradient(45deg, #3a3a3a, #2a2a2a) !important;
+    color: #ffffff !important;
+    border: 2px solid rgba(100, 100, 100, 0.8) !important;
+    box-shadow: 
+        0 0 0 2px rgba(100, 100, 100, 0.4),
+        0 0 0 4px rgba(100, 100, 100, 0.2),
+        0 0 15px rgba(100, 100, 100, 0.3),
+        0 0 30px rgba(100, 100, 100, 0.2) !important;
+}
+
+/* Dark theme settings styling */
+body[data-theme="dark"] .settings-content {
+    background: rgba(60, 60, 60, 0.15) !important;
+    backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(60, 60, 60, 0.3) !important;
+}
+
+body[data-theme="dark"] .settings-header {
+    border-bottom: 1px solid rgba(60, 60, 60, 0.3) !important;
+}
+
+body[data-theme="dark"] .settings-header h3 {
+    color: #ffffff !important;
+}
+
+body[data-theme="dark"] .setting-label {
+    color: #ffffff !important;
+}
+
+body[data-theme="dark"] .setting-label i {
+    color: rgba(200, 200, 200, 0.8) !important;
+}
+
+body[data-theme="dark"] .setting-name {
+    color: #ffffff !important;
+}
+
+body[data-theme="dark"] .setting-desc {
+    color: rgba(200, 200, 200, 0.6) !important;
+}
+
+body[data-theme="dark"] .setting-option {
+    background: rgba(60, 60, 60, 0.2) !important;
+    border: 1px solid rgba(100, 100, 100, 0.2) !important;
+}
+
+body[data-theme="dark"] .theme-selector {
+    background: rgba(60, 60, 60, 0.2) !important;
+    border: 1px solid rgba(100, 100, 100, 0.2) !important;
+}
+
+body[data-theme="dark"] .theme-btn {
+    background: rgba(60, 60, 60, 0.1) !important;
+    border: 1px solid rgba(60, 60, 60, 0.3) !important;
+    color: rgba(200, 200, 200, 0.8) !important;
+}
+
+body[data-theme="dark"] .theme-btn:hover {
+    background: rgba(60, 60, 60, 0.2) !important;
+    border-color: rgba(60, 60, 60, 0.4) !important;
+    color: #ffffff !important;
+}
+
+body[data-theme="dark"] .theme-btn.active {
+    background: linear-gradient(45deg, rgba(60, 60, 60, 0.2), rgba(60, 60, 60, 0.1)) !important;
+    border-color: rgba(60, 60, 60, 0.4) !important;
+    box-shadow: 0 0 0 2px rgba(60, 60, 60, 0.3) !important;
+    color: #ffffff !important;
+}
+
+/* Dark theme toggle switches and other settings elements */
+body[data-theme="dark"] .slider {
+    background: rgba(60, 60, 60, 0.3) !important;
+}
+
+body[data-theme="dark"] .slider:before {
+    background: rgba(200, 200, 200, 0.9) !important;
+}
+
+body[data-theme="dark"] input:checked + .slider {
+    background: rgba(100, 100, 100, 0.5) !important;
+    box-shadow: 
+        0 0 10px rgba(100, 100, 100, 0.3),
+        0 0 20px rgba(100, 100, 100, 0.2),
+        0 0 30px rgba(100, 100, 100, 0.1) !important;
+}
+
+body[data-theme="dark"] input:checked + .slider:before {
+    background: #ffffff !important;
+    box-shadow: 
+        0 2px 6px rgba(0, 0, 0, 0.3),
+        0 0 8px rgba(100, 100, 100, 0.4),
+        0 0 15px rgba(100, 100, 100, 0.2) !important;
+}
+
+
+/* Glass theme toggle switch glow effects */
+body[data-theme="glass"] input:checked + .slider {
+    box-shadow: 
+        0 0 10px rgba(120, 120, 255, 0.3),
+        0 0 20px rgba(120, 120, 255, 0.2),
+        0 0 30px rgba(120, 120, 255, 0.1) !important;
+}
+
+body[data-theme="glass"] input:checked + .slider:before {
+    box-shadow: 
+        0 2px 6px rgba(0, 0, 0, 0.3),
+        0 0 8px rgba(120, 120, 255, 0.4),
+        0 0 15px rgba(120, 120, 255, 0.2) !important;
+}
+
+/* Dark theme hover overrides - lighter hover effects on darker elements */
+body[data-theme="dark"] .glass-card {
+    background: rgba(60, 60, 60, 0.15) !important;
+    border-color: rgba(60, 60, 60, 0.3) !important;
+}
+
+body[data-theme="dark"] .glass-card:hover {
+    background: rgba(100, 100, 100, 0.2) !important;
+    border-color: rgba(100, 100, 100, 0.4) !important;
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+/* Prevent glass-card hover transform from affecting maximized player */
+body[data-theme="dark"] .player.maximized.glass-card:hover {
+    transform: translate(-50%, -50%) !important;
+    background: rgba(100, 100, 100, 0.2) !important;
+    border-color: rgba(100, 100, 100, 0.4) !important;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55) !important;
+}
+
+body[data-theme="dark"] .control-btn {
+    background: rgba(60, 60, 60, 0.2) !important;
+}
+
+body[data-theme="dark"] .control-btn:hover {
+    background: rgba(100, 100, 100, 0.3) !important;
+    transform: translateY(-3px) scale(1.1);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+body[data-theme="dark"] .upload-btn {
+    background: rgba(60, 60, 60, 0.2) !important;
+    border: 2px solid rgba(100, 100, 100, 0.4) !important;
+}
+
+body[data-theme="dark"] .upload-btn:hover {
+    background: rgba(100, 100, 100, 0.3) !important;
+    border-color: rgba(120, 120, 120, 0.6) !important;
+    transform: translateY(-2px);
+}
+
+body[data-theme="dark"] .new-playlist-btn,
+body[data-theme="dark"] .clear-btn {
+    background: rgba(60, 60, 60, 0.2) !important;
+}
+
+body[data-theme="dark"] .new-playlist-btn:hover,
+body[data-theme="dark"] .clear-btn:hover {
+    background: rgba(100, 100, 100, 0.3) !important;
+    transform: scale(1.1);
+}
+
+body[data-theme="dark"] .playlist-item {
+    background: rgba(60, 60, 60, 0.1) !important;
+}
+
+body[data-theme="dark"] .playlist-item:hover {
+    background: rgba(100, 100, 100, 0.2) !important;
+    transform: translateX(5px);
+}
+
+body[data-theme="dark"] .playlist-tab {
+    background: rgba(60, 60, 60, 0.1) !important;
+}
+
+body[data-theme="dark"] .playlist-tab:hover {
+    background: rgba(100, 100, 100, 0.2) !important;
+    color: #ffffff;
+}
+
+body[data-theme="dark"] .album-art-container:hover {
+    transform: scale(1.05);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+}
+
+/* Prevent dark theme general hover from affecting maximized player */
+body[data-theme="dark"] .player.maximized .album-art-container:hover {
+    transform: translateZ(0) scale(1.06) !important;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4) !important;
+}
+
+body[data-theme="dark"] .volume-btn {
+    background: rgba(60, 60, 60, 0.2) !important;
+}
+
+body[data-theme="dark"] .volume-btn:hover {
+    background: rgba(100, 100, 100, 0.3) !important;
+    transform: scale(1.1);
+}
+
+body[data-theme="dark"] .modal-close,
+body[data-theme="dark"] .settings-close {
+    background: rgba(60, 60, 60, 0.3) !important;
+}
+
+body[data-theme="dark"] .modal-close:hover,
+body[data-theme="dark"] .settings-close:hover {
+    background: rgba(100, 100, 100, 0.4) !important;
+    transform: scale(1.1);
+}
+
+body[data-theme="dark"] .playlist-item-remove {
+    background: rgba(60, 60, 60, 0.3) !important;
+}
+
+body[data-theme="dark"] .playlist-item-remove:hover {
+    background: rgba(100, 100, 100, 0.4) !important;
+    transform: scale(1.1);
+}
+
+body[data-theme="dark"] .playlist-tab-remove {
+    background: rgba(60, 60, 60, 0.3) !important;
+}
+
+body[data-theme="dark"] .playlist-tab-remove:hover {
+    background: rgba(100, 100, 100, 0.4) !important;
+    transform: scale(1.1);
+}
+
+body[data-theme="dark"] .btn-secondary {
+    background: rgba(60, 60, 60, 0.2) !important;
+}
+
+body[data-theme="dark"] .btn-secondary:hover {
+    background: rgba(100, 100, 100, 0.3) !important;
+    transform: translateY(-2px);
+}
+
+body[data-theme="dark"] .cover-upload {
+    border-color: rgba(60, 60, 60, 0.5) !important;
+    background: rgba(60, 60, 60, 0.05) !important;
+}
+
+body[data-theme="dark"] .cover-upload:hover {
+    border-color: rgba(100, 100, 100, 0.7) !important;
+    color: #ffffff;
+    background: rgba(100, 100, 100, 0.1) !important;
+}
+
+body[data-theme="dark"] .remove-cover {
+    background: rgba(60, 60, 60, 0.8) !important;
+}
+
+body[data-theme="dark"] .remove-cover:hover {
+    background: rgba(100, 100, 100, 0.9) !important;
+    transform: scale(1.1);
+}
+
+body[data-theme="dark"] .undo-btn {
+    background: rgba(60, 60, 60, 0.18) !important;
+}
+
+body[data-theme="dark"] .undo-btn:hover {
+    background: rgba(100, 100, 100, 0.25) !important;
+}
+
+body[data-theme="dark"] .cancel-btn {
+    background: rgba(60, 60, 60, 0.2) !important;
+}
+
+body[data-theme="dark"] .cancel-btn:hover {
+    background: rgba(100, 100, 100, 0.3) !important;
+    transform: translateY(-2px);
+}
+
+body[data-theme="dark"] .confirm-btn-primary {
+    background: linear-gradient(45deg, #2a2a2a, #1a1a1a) !important;
+}
+
+body[data-theme="dark"] .confirm-btn-primary:hover {
+    background: linear-gradient(45deg, #3a3a3a, #2a2a2a) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* Override the player's gradient hover effect in dark theme */
+body[data-theme="dark"] .player::before {
+    background: linear-gradient(45deg, rgba(60, 60, 60, 0.1), rgba(60, 60, 60, 0.05)) !important;
+}
+
+/* Selection styles for CTRL+LMB in dark theme - greyish without glowing effect */
+body[data-theme="dark"] .playlist-item.selected {
+    background: rgba(80, 80, 80, 0.3) !important;
+    border: 5px solid rgba(120, 120, 120, 0.8) !important;
+}
+
+body[data-theme="dark"] .playlist-item.selecting {
+    background: rgba(70, 70, 70, 0.2) !important;
+    border-color: rgba(100, 100, 100, 0.5) !important;
+    transition: all 0.2s ease;
+}
+
+/* Allow glow to extend beyond edges while keeping content contained */
+body[data-theme="dark"] .playlist-container,
+body[data-theme="dark"] .playlist-items,
+body[data-theme="dark"] .playlist-tabs {
+    overflow: visible !important;
+    clip-path: inset(0 -50px 0 -50px) !important;
+}
+
+body[data-theme="dark"] .playlist {
+    overflow-y: auto !important;
+    overflow-x: visible !important;
+    clip-path: inset(0 -30px 0 -30px) !important;
+}
+
+
+body[data-theme="dark"] .playlist-container {
+    padding: 25px 20px !important;
+    margin: -25px -20px !important;
+}
+
+body[data-theme="dark"] .playlist {
+    padding: 25px 10px !important;
+    margin: -25px -10px !important;
+}
+
+/* Ensure main containers allow glow overflow with clip-path */
+body[data-theme="dark"] .player {
+    overflow: visible !important;
+    clip-path: inset(0 -40px 0 -40px) !important;
+}
+
+body[data-theme="dark"] .glass-card {
+    overflow: visible !important;
+    clip-path: inset(0 -40px 0 -40px) !important;
+}
+
+/* Add extra space around playlist items to accommodate glow */
+body[data-theme="dark"] .playlist-item {
+    margin: 5px 0 !important;
+    padding: 8px 12px !important;
+}
+
+/* Ensure body and html allow glow overflow */
+body[data-theme="dark"] {
+    overflow: visible !important;
+}
+
+html {
+    overflow: visible !important;
+}
+
+body[data-theme="dark"] .player:hover::before {
+    opacity: 1;
+}
+
+/* Fix for maximized player hover glitch in dark theme */
+body[data-theme="dark"] .player.maximized:hover::before {
+    opacity: 0.2 !important;
+}
+
+/* Ensure glass theme also respects maximized hover reduction */
+body[data-theme="glass"] .player.maximized:hover::before {
+    opacity: 0.2 !important;
+}
+
+@media (min-width: 1024px) {
+    body[data-theme="dark"] .player.maximized .album-art-container:hover {
+        transform: translateZ(0) scale(1.08) !important;
+    }
+}
+
+/* Pulsing glow animation for selected and active items */
+@keyframes pulseGlow {
+    0% {
+        box-shadow: 
+            0 0 0 2px rgba(120, 120, 120, 0.4),
+            0 0 15px rgba(120, 120, 120, 0.3),
+            0 0 30px rgba(120, 120, 120, 0.2),
+            inset 0 0 10px rgba(120, 120, 120, 0.1);
+    }
+    50% {
+        box-shadow: 
+            0 0 0 2px rgba(120, 120, 120, 0.6),
+            0 0 20px rgba(120, 120, 120, 0.4),
+            0 0 40px rgba(120, 120, 120, 0.3),
+            inset 0 0 15px rgba(120, 120, 120, 0.15);
+    }
+    100% {
+        box-shadow: 
+            0 0 0 2px rgba(120, 120, 120, 0.4),
+            0 0 15px rgba(120, 120, 120, 0.3),
+            0 0 30px rgba(120, 120, 120, 0.2),
+            inset 0 0 10px rgba(120, 120, 120, 0.1);
+    }
+}
+
+@keyframes activePulseGlow {
+    0% {
+        box-shadow: 
+            0 0 0 2px rgba(140, 140, 140, 0.5),
+            0 0 20px rgba(140, 140, 140, 0.4),
+            0 0 40px rgba(140, 140, 140, 0.3),
+            inset 0 0 15px rgba(140, 140, 140, 0.15);
+    }
+    50% {
+        box-shadow: 
+            0 0 0 2px rgba(140, 140, 140, 0.7),
+            0 0 25px rgba(140, 140, 140, 0.5),
+            0 0 50px rgba(140, 140, 140, 0.4),
+            inset 0 0 20px rgba(140, 140, 140, 0.2);
+    }
+    100% {
+        box-shadow: 
+            0 0 0 2px rgba(140, 140, 140, 0.5),
+            0 0 20px rgba(140, 140, 140, 0.4),
+            0 0 40px rgba(140, 140, 140, 0.3),
+            inset 0 0 15px rgba(140, 140, 140, 0.15);
+    }
+}
+
+
+/* Glass Theme Selection Styles - No glowing effects */
+body[data-theme="glass"] .playlist-item.selected {
+    background: rgba(100, 100, 255, 0.3) !important;
+    border: 5px solid rgba(120, 120, 255, 0.8) !important;
+}
+
+/* Glass theme mute indicator */
+body[data-theme="glass"] .mute-indicator {
+    background: rgba(255, 100, 100, 0.2) !important;
+    border: 1px solid rgba(255, 100, 100, 0.4) !important;
+    color: #ff8a8a !important;
+}
+
+body[data-theme="glass"] .playlist-item.selecting {
+    background: rgba(80, 80, 255, 0.2) !important;
+    border-color: rgba(100, 100, 255, 0.5) !important;
+    transition: all 0.2s ease;
+}
+
+body[data-theme="glass"] .playlist-item.active {
+    background: linear-gradient(45deg, rgba(100, 100, 255, 0.2), rgba(100, 100, 255, 0.1));
+    border-color: rgba(140, 140, 255, 0.7);
+}
+
+/* Glass theme playlist tab active styling */
+body[data-theme="glass"] .playlist-tab.active {
+    background: linear-gradient(45deg, rgba(100, 149, 237, 0.2), rgba(100, 149, 237, 0.1));
+    border: 2px solid rgba(120, 120, 255, 0.6);
+    box-shadow: 
+        0 0 0 2px rgba(120, 120, 255, 0.4),
+        0 0 0 4px rgba(120, 120, 255, 0.2),
+        0 0 15px rgba(120, 120, 255, 0.3),
+        0 0 30px rgba(120, 120, 255, 0.2),
+        0 0 50px rgba(120, 120, 255, 0.1) !important;
+}
+
+/* Glass theme pulsing animations */
+@keyframes glassPulseGlow {
+    0% {
+        box-shadow: 
+            0 0 0 2px rgba(120, 120, 255, 0.4),
+            0 0 15px rgba(120, 120, 255, 0.3),
+            0 0 30px rgba(120, 120, 255, 0.2),
+            inset 0 0 10px rgba(120, 120, 255, 0.1);
+    }
+    50% {
+        box-shadow: 
+            0 0 0 2px rgba(120, 120, 255, 0.6),
+            0 0 20px rgba(120, 120, 255, 0.4),
+            0 0 40px rgba(120, 120, 255, 0.3),
+            inset 0 0 15px rgba(120, 120, 255, 0.15);
+    }
+    100% {
+        box-shadow: 
+            0 0 0 2px rgba(120, 120, 255, 0.4),
+            0 0 15px rgba(120, 120, 255, 0.3),
+            0 0 30px rgba(120, 120, 255, 0.2),
+            inset 0 0 10px rgba(120, 120, 255, 0.1);
+    }
+}
+
+@keyframes glassActivePulseGlow {
+    0% {
+        box-shadow: 
+            0 0 0 2px rgba(140, 140, 255, 0.5),
+            0 0 20px rgba(140, 140, 255, 0.4),
+            0 0 40px rgba(140, 140, 255, 0.3),
+            inset 0 0 15px rgba(140, 140, 255, 0.15);
+    }
+    50% {
+        box-shadow: 
+            0 0 0 2px rgba(140, 140, 255, 0.7),
+            0 0 25px rgba(140, 140, 255, 0.5),
+            0 0 50px rgba(140, 140, 255, 0.4),
+            inset 0 0 20px rgba(140, 140, 255, 0.2);
+    }
+    100% {
+        box-shadow: 
+            0 0 0 2px rgba(140, 140, 255, 0.5),
+            0 0 20px rgba(140, 140, 255, 0.4),
+            0 0 40px rgba(140, 140, 255, 0.3),
+            inset 0 0 15px rgba(140, 140, 255, 0.15);
+    }
+}
+
+
+/* Glass theme container overflow settings for glow effects */
+body[data-theme="glass"] .playlist-container,
+body[data-theme="glass"] .playlist-items,
+body[data-theme="glass"] .playlist-tabs {
+    overflow: visible !important;
+    clip-path: inset(0 -50px 0 -50px) !important;
+}
+
+body[data-theme="glass"] .playlist {
+    overflow-y: auto !important;
+    overflow-x: visible !important;
+    clip-path: inset(0 -30px 0 -30px) !important;
+}
+
+/* New themes container overflow settings (same as dark theme) */
+body[data-theme="light"] .playlist-container,
+body[data-theme="light"] .playlist-items,
+body[data-theme="light"] .playlist-tabs {
+    overflow: visible !important;
+    clip-path: inset(0 -50px 0 -50px) !important;
+}
+
+body[data-theme="light"] .playlist {
+    overflow-y: auto !important;
+    overflow-x: visible !important;
+    clip-path: inset(0 -30px 0 -30px) !important;
+}
+
+body[data-theme="light"] .playlist-container {
+    padding: 25px 20px !important;
+    margin: -25px -20px !important;
+}
+
+body[data-theme="light"] .playlist {
+    padding: 25px 10px !important;
+    margin: -25px -10px !important;
+}
+
+body[data-theme="purple"] .playlist-container,
+body[data-theme="purple"] .playlist-items,
+body[data-theme="purple"] .playlist-tabs {
+    overflow: visible !important;
+    clip-path: inset(0 -50px 0 -50px) !important;
+}
+
+body[data-theme="purple"] .playlist {
+    overflow-y: auto !important;
+    overflow-x: visible !important;
+    clip-path: inset(0 -30px 0 -30px) !important;
+}
+
+body[data-theme="purple"] .playlist-container {
+    padding: 25px 20px !important;
+    margin: -25px -20px !important;
+}
+
+body[data-theme="purple"] .playlist {
+    padding: 25px 10px !important;
+    margin: -25px -10px !important;
+}
+
+body[data-theme="glass"] .player {
+    overflow: visible !important;
+    clip-path: inset(0 -40px 0 -40px) !important;
+}
+
+/* New themes player overflow settings (same as dark theme) */
+body[data-theme="light"] .player {
+    overflow: visible !important;
+    clip-path: inset(0 -40px 0 -40px) !important;
+}
+
+body[data-theme="purple"] .player {
+    overflow: visible !important;
+    clip-path: inset(0 -40px 0 -40px) !important;
+}
+
+body[data-theme="glass"] .glass-card {
+    overflow: visible !important;
+    clip-path: inset(0 -40px 0 -40px) !important;
+}
+
+body[data-theme="glass"] .playlist-container {
+    padding: 25px 20px !important;
+    margin: -25px -20px !important;
+}
+
+body[data-theme="glass"] .playlist {
+    padding: 25px 10px !important;
+    margin: -25px -10px !important;
+}
+
+
+/* Glowing effects for volume bar and progress bar */
+/* Dark Theme Glowing Controls */
+
+body[data-theme="dark"] .progress {
+    box-shadow: 
+        inset 0 2px 6px rgba(255, 255, 255, 0.2), 
+        0 6px 14px rgba(100, 100, 100, 0.4),
+        0 0 20px rgba(100, 100, 100, 0.1) !important;
+}
+
+body[data-theme="dark"] .volume-progress {
+    box-shadow: 
+        inset 0 2px 6px rgba(255, 255, 255, 0.2), 
+        0 4px 10px rgba(100, 100, 100, 0.4),
+        0 0 15px rgba(100, 100, 100, 0.1) !important;
+}
+
+body[data-theme="dark"] .progress-handle {
+    box-shadow: 
+        0 2px 8px rgba(0, 0, 0, 0.5), 
+        0 0 10px rgba(100, 100, 100, 0.6),
+        0 0 20px rgba(100, 100, 100, 0.3) !important;
+}
+
+body[data-theme="dark"] .volume-handle {
+    box-shadow: 
+        0 2px 6px rgba(0, 0, 0, 0.5), 
+        0 0 8px rgba(100, 100, 100, 0.6),
+        0 0 15px rgba(100, 100, 100, 0.3) !important;
+}
+
+/* Glass Theme Glowing Controls */
+
+body[data-theme="glass"] .progress {
+    box-shadow: 
+        inset 0 2px 6px rgba(255, 255, 255, 0.2), 
+        0 6px 14px rgba(120, 120, 255, 0.4),
+        0 0 20px rgba(120, 120, 255, 0.1) !important;
+}
+
+body[data-theme="glass"] .volume-progress {
+    box-shadow: 
+        inset 0 2px 6px rgba(255, 255, 255, 0.2), 
+        0 4px 10px rgba(120, 120, 255, 0.4),
+        0 0 15px rgba(120, 120, 255, 0.1) !important;
+}
+
+body[data-theme="glass"] .progress-handle {
+    box-shadow: 
+        0 2px 8px rgba(0, 0, 0, 0.5), 
+        0 0 10px rgba(120, 120, 255, 0.6),
+        0 0 20px rgba(120, 120, 255, 0.3) !important;
+}
+
+body[data-theme="glass"] .volume-handle {
+    box-shadow: 
+        0 2px 6px rgba(0, 0, 0, 0.5), 
+        0 0 8px rgba(120, 120, 255, 0.6),
+        0 0 15px rgba(120, 120, 255, 0.3) !important;
+}
+
+/* Permanent glow for play button - Dark Theme */
+body[data-theme="dark"] .play-btn {
+    background: linear-gradient(180deg, rgba(60, 60, 60, 0.95), rgba(60, 60, 60, 0.8)) !important;
+    border: 2px solid rgba(100, 100, 100, 0.6) !important;
+    box-shadow: 
+        0 0 0 2px rgba(100, 100, 100, 0.4),
+        0 0 0 4px rgba(100, 100, 100, 0.2),
+        0 8px 25px rgba(60, 60, 60, 0.2),
+        0 0 30px rgba(100, 100, 100, 0.2),
+        0 0 60px rgba(100, 100, 100, 0.15),
+        0 0 100px rgba(100, 100, 100, 0.1),
+        0 0 150px rgba(100, 100, 100, 0.08),
+        0 0 200px rgba(100, 100, 100, 0.05),
+        0 0 250px rgba(100, 100, 100, 0.03) !important;
+    transition: all 0.3s ease;
+}
+
+body[data-theme="dark"] .play-btn:hover {
+    background: linear-gradient(180deg, rgba(60, 60, 60, 1), rgba(60, 60, 60, 0.9)) !important;
+    border: 2px solid rgba(120, 120, 120, 0.8) !important;
+    box-shadow: 
+        0 0 0 2px rgba(120, 120, 120, 0.6),
+        0 0 0 4px rgba(120, 120, 120, 0.4),
+        0 0 0 6px rgba(120, 120, 120, 0.2),
+        0 15px 35px rgba(60, 60, 60, 0.3),
+        0 0 40px rgba(100, 100, 100, 0.3),
+        0 0 80px rgba(100, 100, 100, 0.25),
+        0 0 120px rgba(100, 100, 100, 0.2),
+        0 0 180px rgba(100, 100, 100, 0.15),
+        0 0 250px rgba(100, 100, 100, 0.12),
+        0 0 300px rgba(100, 100, 100, 0.08),
+        0 0 350px rgba(100, 100, 100, 0.05) !important;
+}
+
+/* Permanent glow for play button - Glass Theme */
+body[data-theme="glass"] .play-btn {
+    background: linear-gradient(180deg, rgba(100, 149, 237, 0.95), rgba(100, 149, 237, 0.8)) !important;
+    border: 2px solid rgba(120, 120, 255, 0.6) !important;
+    box-shadow: 
+        0 0 0 2px rgba(120, 120, 255, 0.4),
+        0 0 0 4px rgba(120, 120, 255, 0.2),
+        0 8px 25px rgba(100, 149, 237, 0.35),
+        0 0 30px rgba(120, 120, 255, 0.2),
+        0 0 60px rgba(120, 120, 255, 0.15),
+        0 0 100px rgba(120, 120, 255, 0.1),
+        0 0 150px rgba(120, 120, 255, 0.08),
+        0 0 200px rgba(120, 120, 255, 0.05),
+        0 0 250px rgba(120, 120, 255, 0.03) !important;
+    transition: all 0.3s ease;
+}
+
+body[data-theme="glass"] .play-btn:hover {
+    background: linear-gradient(180deg, rgba(100, 149, 237, 1), rgba(100, 149, 237, 0.9)) !important;
+    border: 2px solid rgba(140, 140, 255, 0.8) !important;
+    box-shadow: 
+        0 0 0 2px rgba(140, 140, 255, 0.6),
+        0 0 0 4px rgba(140, 140, 255, 0.4),
+        0 0 0 6px rgba(140, 140, 255, 0.2),
+        0 15px 35px rgba(100, 149, 237, 0.5),
+        0 0 40px rgba(120, 120, 255, 0.5),
+        0 0 80px rgba(120, 120, 255, 0.4),
+        0 0 120px rgba(120, 120, 255, 0.3),
+        0 0 180px rgba(120, 120, 255, 0.25),
+        0 0 250px rgba(120, 120, 255, 0.2),
+        0 0 300px rgba(120, 120, 255, 0.15),
+        0 0 350px rgba(120, 120, 255, 0.1) !important;
+}
+
+/* Dark theme album art styling */
+body[data-theme="dark"] .album-art:not(.has-art) {
+    background: linear-gradient(135deg, #2a2a2a, #1a1a1a) !important;
+    color: rgba(200, 200, 200, 0.6) !important;
+}
+
+body[data-theme="dark"] .album-art.has-art {
+    /* Don't override background for album art - let the image show */
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+    animation: none !important;
+}
+
+body[data-theme="dark"] .album-art img {
+    filter: brightness(0.9) contrast(1.1) saturate(1.0) !important;
+    transition: filter 0.3s ease;
+}
+
+body[data-theme="dark"] .album-art-container:hover .album-art img {
+    filter: brightness(1.0) contrast(1.2) saturate(1.1) !important;
+}
+
+body[data-theme="dark"] .album-art-container:hover .album-art:not(.has-art) {
+    background: linear-gradient(135deg, #3a3a3a, #2a2a2a) !important;
+    color: rgba(220, 220, 220, 0.7) !important;
+}
+
+/* Dark theme cover preview styling */
+body[data-theme="dark"] .cover-preview img {
+    filter: brightness(0.7) contrast(1.1) saturate(0.8) !important;
+    transition: filter 0.3s ease;
+}
+
+/* Dark theme mute indicator */
+body[data-theme="dark"] .mute-indicator {
+    background: rgba(255, 100, 100, 0.2) !important;
+    border: 1px solid rgba(255, 100, 100, 0.4) !important;
+    color: #ff8a8a !important;
+}
+
+body[data-theme="dark"] .cover-preview:hover img {
+    filter: brightness(0.8) contrast(1.2) saturate(0.9) !important;
+}
+
+/* Responsive Settings */
+@media (max-width: 768px) {
+    .settings-panel {
+        bottom: 15px;
+        right: 15px;
+    }
+    
+    .discord-panel {
+        bottom: 15px;
+        right: 75px;
+    }
+    
+    .settings-content {
+        width: 280px;
+        right: -10px;
+    }
+    
+    .theme-selector {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Custom Confirmation Dialog */
+.confirm-dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(10px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.confirm-dialog-overlay.show {
+    display: flex;
+    opacity: 1;
+}
+
+.confirm-dialog {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    padding: 0;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+}
+
+.confirm-dialog-overlay.show .confirm-dialog {
+    transform: scale(1);
+}
+
+.confirm-dialog-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 24px 16px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.confirm-dialog-header i {
+    color: #ff6b6b;
+    font-size: 20px;
+}
+
+.confirm-dialog-header h3 {
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.confirm-dialog-content {
+    padding: 20px 24px;
+}
+
+.confirm-dialog-content p {
+    color: #ffffff;
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 0;
+    opacity: 0.9;
+}
+
+.confirm-dialog-actions {
+    display: flex;
+    gap: 12px;
+    padding: 16px 24px 24px 24px;
+    justify-content: flex-end;
+}
+
+.confirm-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 100px;
+    justify-content: center;
+}
+
+.cancel-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.cancel-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.confirm-btn-primary {
+    background: linear-gradient(45deg, #ff6b6b, #ff5252);
+    color: #ffffff;
+    border: 1px solid rgba(255, 107, 107, 0.3);
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+}
+
+.confirm-btn-primary:hover {
+    background: linear-gradient(45deg, #ff5252, #ff4444);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+}
+
+/* Custom Tooltip Styles */
+.tooltip {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    z-index: 10000;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(5px);
+    transition: all 0.2s ease;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.tooltip.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.tooltip::before {
+    content: '';
+    position: absolute;
+    top: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 5px solid rgba(0, 0, 0, 0.9);
+}
+
+/* Dark theme tooltip */
+body[data-theme="dark"] .tooltip {
+    background: rgba(30, 30, 30, 0.95);
+    border: 1px solid rgba(100, 100, 100, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+body[data-theme="dark"] .tooltip::before {
+    border-bottom-color: rgba(30, 30, 30, 0.95);
+}
+
+/* Version: v5.2.0 */
+
+/* Clock */
+.header-clock {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.clock {
+    padding: 22px 44px;
+    border-radius: 16px;
+    font-weight: 600;
+    font-size: 18px;
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: inline-block;
+    line-height: 1.25;
+}
+
+@media (max-width: 768px) {
+    .header {
+        gap: 10px;
+    }
+    .header-clock {
+        order: 2;
+    }
+}
+
+/* Dark mode custom cursor */
+body[data-theme="dark"] {
+    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><path d='M2 2 L2 16 L6 12 L10 22 L13 21 L9 11 L16 11 Z' fill='%23ffffff' fill-opacity='0.6'/><path d='M2 2 L16 11 L9 11 L13 21 L10 22 L6 12 L2 16 Z' fill='none' stroke='%23000000' stroke-opacity='0.25' stroke-width='1'/></svg>") 2 2, auto;
+}
+
+/* Keep text caret for inputs/textareas in dark mode */
+body[data-theme="dark"] input,
+body[data-theme="dark"] textarea,
+body[data-theme="dark"] input[type="range"],
+body[data-theme="dark"] input[type="number"],
+body[data-theme="dark"] input[type="text"] {
+    cursor: text;
+}
+
+/* Use the same dimmed arrow over interactive elements; pointer as fallback */
+body[data-theme="dark"] a,
+body[data-theme="dark"] button,
+body[data-theme="dark"] .control-btn,
+body[data-theme="dark"] .upload-btn,
+body[data-theme="dark"] .playlist-item,
+body[data-theme="dark"] .playlist-tab,
+body[data-theme="dark"] .settings-toggle,
+body[data-theme="dark"] .logs-btn,
+body[data-theme="dark"] .artists-btn,
+body[data-theme="dark"] .discord-btn,
+body[data-theme="dark"] .collapse-btn {
+    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><path d='M2 2 L2 16 L6 12 L10 22 L13 21 L9 11 L16 11 Z' fill='%23ffffff' fill-opacity='0.7'/><path d='M2 2 L16 11 L9 11 L13 21 L10 22 L6 12 L2 16 Z' fill='none' stroke='%23000000' stroke-opacity='0.3' stroke-width='1'/></svg>") 2 2, pointer;
+}
+
+/* Theme-specific custom cursors */
+body[data-theme="dark"] {
+    cursor: url("assets/cursors/linux-dark.svg") 3 3, auto;
+}
+
+body[data-theme="glass"] {
+    cursor: url("assets/cursors/linux-light.svg") 3 3, auto;
+}
+
+/* Keep text caret for form fields */
+body[data-theme="dark"] input,
+body[data-theme="dark"] textarea,
+body[data-theme="dark"] input[type="range"],
+body[data-theme="dark"] input[type="number"],
+body[data-theme="dark"] input[type="text"],
+body[data-theme="glass"] input,
+body[data-theme="glass"] textarea,
+body[data-theme="glass"] input[type="range"],
+body[data-theme="glass"] input[type="number"],
+body[data-theme="glass"] input[type="text"] {
+    cursor: text;
+}
+
+/* Interactive elements should keep pointer behavior */
+body[data-theme="dark"] a,
+body[data-theme="dark"] button,
+body[data-theme="dark"] .control-btn,
+body[data-theme="dark"] .upload-btn,
+body[data-theme="dark"] .playlist-item,
+body[data-theme="dark"] .playlist-tab,
+body[data-theme="dark"] .settings-toggle,
+body[data-theme="dark"] .logs-btn,
+body[data-theme="dark"] .artists-btn,
+body[data-theme="dark"] .discord-btn,
+body[data-theme="dark"] .collapse-btn,
+body[data-theme="glass"] a,
+body[data-theme="glass"] button,
+body[data-theme="glass"] .control-btn,
+body[data-theme="glass"] .upload-btn,
+body[data-theme="glass"] .playlist-item,
+body[data-theme="glass"] .playlist-tab,
+body[data-theme="glass"] .settings-toggle,
+body[data-theme="glass"] .logs-btn,
+body[data-theme="glass"] .artists-btn,
+body[data-theme="glass"] .discord-btn,
+body[data-theme="glass"] .collapse-btn {
+    cursor: pointer;
+}
+
+/* Theme-specific custom cursors (dark mode) */
+body[data-theme="dark"] {
+    cursor: url("cursors/Cursor.cur"), auto;
+}
+
+/* Keep text caret for form fields in dark mode */
+body[data-theme="dark"] input,
+body[data-theme="dark"] textarea,
+body[data-theme="dark"] input[type="range"],
+body[data-theme="dark"] input[type="number"],
+body[data-theme="dark"] input[type="text"] {
+    cursor: url("cursors/SelectText.cur"), text;
+}
+
+/* Interactive elements use link pointer in dark mode */
+body[data-theme="dark"] a,
+body[data-theme="dark"] button,
+body[data-theme="dark"] .control-btn,
+body[data-theme="dark"] .upload-btn,
+body[data-theme="dark"] .playlist-item,
+body[data-theme="dark"] .playlist-tab,
+body[data-theme="dark"] .settings-toggle,
+body[data-theme="dark"] .logs-btn,
+body[data-theme="dark"] .artists-btn,
+body[data-theme="dark"] .discord-btn,
+body[data-theme="dark"] .collapse-btn {
+    cursor: url("cursors/SelectLink.cur"), pointer;
+}
+
+/* Theme-specific custom cursors (dark mode, smaller) */
+body[data-theme="dark"] {
+    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 32 32'><path d='M3 3 L3 22 L9.5 15.5 L14.5 29 L18.5 27.5 L13.5 14.5 L26 14.5 Z' fill='%23000000' stroke='%23FFFFFF' stroke-width='3.2' stroke-linejoin='round' stroke-linecap='round'/></svg>") 2 2, url("cursors/Cursor.cur"), auto;
+}
+
+/* Keep text caret for form fields in dark mode */
+body[data-theme="dark"] input,
+body[data-theme="dark"] textarea,
+body[data-theme="dark"] input[type="range"],
+body[data-theme="dark"] input[type="number"],
+body[data-theme="dark"] input[type="text"] {
+    cursor: url("cursors/SelectText.cur"), text;
+}
+
+/* Interactive elements use link pointer in dark mode */
+body[data-theme="dark"] a,
+body[data-theme="dark"] button,
+body[data-theme="dark"] .control-btn,
+body[data-theme="dark"] .upload-btn,
+body[data-theme="dark"] .playlist-item,
+body[data-theme="dark"] .playlist-tab,
+body[data-theme="dark"] .settings-toggle,
+body[data-theme="dark"] .logs-btn,
+body[data-theme="dark"] .artists-btn,
+body[data-theme="dark"] .discord-btn,
+body[data-theme="dark"] .collapse-btn {
+    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 32 32'><path d='M3 3 L3 22 L9.5 15.5 L14.5 29 L18.5 27.5 L13.5 14.5 L26 14.5 Z' fill='%23000000' stroke='%23FFFFFF' stroke-width='3.2' stroke-linejoin='round' stroke-linecap='round'/></svg>") 2 2, url("cursors/SelectLink.cur"), pointer;
+}
+
+/* Light/glass theme cursor smaller */
+body[data-theme="glass"] {
+    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 32 32'><path d='M3 3 L3 22 L9.5 15.5 L14.5 29 L18.5 27.5 L13.5 14.5 L26 14.5 Z' fill='%23E6E6E6' stroke='%23000000' stroke-width='3.2' stroke-linejoin='round' stroke-linecap='round'/></svg>") 2 2, auto;
+}
+
+/* Remove custom cursors and revert to system defaults */
+body[data-theme="dark"],
+body[data-theme="glass"] {
+    cursor: auto !important;
+}
+
+body[data-theme="dark"] input,
+body[data-theme="dark"] textarea,
+body[data-theme="dark"] input[type="range"],
+body[data-theme="dark"] input[type="number"],
+body[data-theme="dark"] input[type="text"],
+body[data-theme="glass"] input,
+body[data-theme="glass"] textarea,
+body[data-theme="glass"] input[type="range"],
+body[data-theme="glass"] input[type="number"],
+body[data-theme="glass"] input[type="text"] {
+    cursor: auto !important;
+}
+
+body[data-theme="dark"] a,
+body[data-theme="dark"] button,
+body[data-theme="dark"] .control-btn,
+body[data-theme="dark"] .upload-btn,
+body[data-theme="dark"] .playlist-item,
+body[data-theme="dark"] .playlist-tab,
+body[data-theme="dark"] .settings-toggle,
+body[data-theme="dark"] .logs-btn,
+body[data-theme="dark"] .artists-btn,
+body[data-theme="dark"] .discord-btn,
+body[data-theme="dark"] .collapse-btn,
+body[data-theme="glass"] a,
+body[data-theme="glass"] button,
+body[data-theme="glass"] .control-btn,
+body[data-theme="glass"] .upload-btn,
+body[data-theme="glass"] .playlist-item,
+body[data-theme="glass"] .playlist-tab,
+body[data-theme="glass"] .settings-toggle,
+body[data-theme="glass"] .logs-btn,
+body[data-theme="glass"] .artists-btn,
+body[data-theme="glass"] .discord-btn,
+body[data-theme="glass"] .collapse-btn {
+    cursor: auto !important;
+}
+
+/* Use the clock font in settings and upload buttons */
+.settings-content, .settings-content * {
+    font-family: 'Inter', sans-serif !important;
+}
+
+.upload-btn, .upload-btn span {
+    font-family: 'Inter', sans-serif !important;
+}
+
+/* Restore Font Awesome icons in settings (revert unintended change) */
+.settings-content i,
+.settings-content .fa,
+.settings-content [class^="fa-"],
+.settings-content [class*=" fa-"],
+.settings-content .fas,
+.settings-content .far,
+.settings-content .fal,
+.settings-content .fat,
+.settings-content .fad {
+    font-family: "Font Awesome 6 Free" !important;
+    font-weight: 900 !important;
+}
+
+.settings-content .far { /* regular weight */
+    font-weight: 400 !important;
+}
+
+.settings-content .fab,
+.settings-content .fa-brands {
+    font-family: "Font Awesome 6 Brands" !important;
+    font-weight: 400 !important;
+}
+
+/* Disable all hover-driven visual effects when no-hover is enabled */
+body.no-hover .glass-card:hover,
+body.no-hover .player:hover::before,
+body.no-hover .album-art-container:hover,
+body.no-hover .control-btn:hover,
+body.no-hover .upload-btn:hover,
+body.no-hover .new-playlist-btn:hover,
+body.no-hover .clear-btn:hover,
+body.no-hover .logs-btn:hover,
+body.no-hover .artists-btn:hover,
+body.no-hover .discord-btn:hover,
+body.no-hover .collapse-btn:hover,
+body.no-hover .playlist-item:hover,
+body.no-hover .playlist-tab:hover,
+body.no-hover .artist-item:hover,
+body.no-hover .modal-close:hover,
+body.no-hover .settings-close:hover,
+body.no-hover .cover-upload:hover,
+body.no-hover .undo-btn:hover,
+body.no-hover .btn-secondary:hover,
+body.no-hover .btn-primary:hover,
+body.no-hover .confirm-btn-primary:hover,
+body.no-hover .playlist-item-remove:hover,
+body.no-hover .playlist-tab-remove:hover {
+    transform: none !important;
+    box-shadow: none !important;
+    background: inherit !important;
+    opacity: inherit !important;
+}
+
+/* Prevent progress/volume handles from appearing on hover */
+body.no-hover .progress-bar:hover .progress-handle,
+body.no-hover .volume-bar:hover .volume-handle {
+    opacity: 0 !important;
+}
+
+/* Keep pointer events and basic styles; just remove hover visual changes */
+body.no-hover .playlist-item:hover { transform: none !important; }
+body.no-hover .playlist-tab.drag-over { box-shadow: none !important; background: inherit !important; }
+
+/* Themed text selection */
+body[data-theme="dark"] ::selection { background: rgba(120, 120, 120, 0.35); color: #ffffff; }
+body[data-theme="dark"] ::-moz-selection { background: rgba(120, 120, 120, 0.35); color: #ffffff; }
+body[data-theme="dark"] input::selection,
+body[data-theme="dark"] textarea::selection { background: rgba(120, 120, 120, 0.45); color: #ffffff; }
+
+body[data-theme="glass"] ::selection { background: rgba(100, 149, 237, 0.35); color: #ffffff; }
+body[data-theme="glass"] ::-moz-selection { background: rgba(100, 149, 237, 0.35); color: #ffffff; }
+body[data-theme="glass"] input::selection,
+body[data-theme="glass"] textarea::selection { background: rgba(100, 149, 237, 0.45); color: #ffffff; }
+
+/* Dark mode: dim bottom-right utility buttons to match control button colorway */
+body[data-theme="dark"] .discord-btn,
+body[data-theme="dark"] .logs-btn,
+body[data-theme="dark"] .artists-btn,
+body[data-theme="dark"] .collapse-btn {
+    background: rgba(60, 60, 60, 0.2) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    box-shadow: none !important;
+}
+
+body[data-theme="dark"] .discord-btn:hover,
+body[data-theme="dark"] .logs-btn:hover,
+body[data-theme="dark"] .artists-btn:hover,
+body[data-theme="dark"] .collapse-btn:hover {
+    background: rgba(100, 100, 100, 0.3) !important;
+    transform: translateY(-2px) scale(1.05) !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Dark mode: dim settings toggle to match control button colorway */
+body[data-theme="dark"] .settings-toggle {
+    background: rgba(60, 60, 60, 0.2) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    box-shadow: none !important;
+}
+
+body[data-theme="dark"] .settings-toggle:hover {
+    background: rgba(100, 100, 100, 0.3) !important;
+    transform: translateY(-2px) scale(1.05) !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Hide settings panel when bottom panels are collapsed */
+body.panels-collapsed .settings-panel {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(30px) scale(0.9);
+    transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.15s;
+}
+
+/* Version check button styling */
+#checkUpdatesBtn {
+    width: 100%;
+    margin-left: 0;
+}
+
+/* Disable text selection for playlist items */
+.playlist-item-title,
+.playlist-item-artist {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Song thickness setting - make songs thicker in all themes when enabled */
+body.thick-songs .playlist-item {
+    padding: 15px !important;
+    min-height: 60px !important;
+    margin-bottom: 8px !important;
+}
