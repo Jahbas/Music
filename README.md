@@ -1,6 +1,8 @@
 # Music
-Best fully open source music player.
-React + Vite + TypeScript. Music library and player; tracks and playlists stored in IndexedDB.
+Best fully open source music player.  
+React + Vite + TypeScript.   
+Music library and player; tracks and playlists stored in IndexedDB.  
+If you want to request any feature or have found a bug just open a request and ill do it.  
 
 ## Setup
 
