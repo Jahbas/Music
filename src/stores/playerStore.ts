@@ -1,0 +1,135 @@
+import { create } from "zustand";
+
+const VOLUME_STORAGE_KEY = "player-volume";
+const SHUFFLE_STORAGE_KEY = "player-shuffle";
+
+function getStoredVolume(): number {
+  try {
+    const raw = localStorage.getItem(VOLUME_STORAGE_KEY);
+    if (raw == null) return 0.8;
+    const n = Number(raw);
+    if (Number.isFinite(n) && n >= 0 && n <= 1) return n;
+  } catch {
+    // ignore
+  }
+  return 0.8;
+}
+
+function getStoredShuffle(): boolean {
+  try {
+    return localStorage.getItem(SHUFFLE_STORAGE_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function shuffleArray<T>(arr: T[]): T[] {
+  const out = [...arr];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+type PlayerState = {
+  currentTrackId: string | null;
+  queue: string[];
+  isPlaying: boolean;
+  shuffle: boolean;
+  volume: number;
+  currentTime: number;
+  duration: number;
+  setQueue: (queue: string[]) => void;
+  playTrack: (trackId: string, queue?: string[]) => void;
+  playTrackIds: (trackIds: string[], options?: { shuffle?: boolean }) => void;
+  togglePlay: () => void;
+  toggleShuffle: () => void;
+  pause: () => void;
+  play: () => void;
+  next: () => void;
+  previous: () => void;
+  setVolume: (volume: number) => void;
+  setShuffle: (value: boolean) => void;
+  setCurrentTime: (time: number) => void;
+  setDuration: (duration: number) => void;
+  clearQueue: () => void;
+};
+
+export const usePlayerStore = create<PlayerState>((set, get) => ({
+  currentTrackId: null,
+  queue: [],
+  isPlaying: false,
+  shuffle: getStoredShuffle(),
+  volume: getStoredVolume(),
+  currentTime: 0,
+  duration: 0,
+  setQueue: (queue) => set({ queue }),
+  playTrack: (trackId, queue) => {
+    if (queue) {
+      set({ queue });
+    }
+    set({ currentTrackId: trackId, isPlaying: true });
+  },
+  playTrackIds: (trackIds, options) => {
+    if (trackIds.length === 0) return;
+    const useShuffle = options?.shuffle ?? get().shuffle;
+    const queue = useShuffle ? shuffleArray(trackIds) : trackIds;
+    set({ queue });
+    set({ currentTrackId: queue[0], isPlaying: true });
+  },
+  togglePlay: () => set({ isPlaying: !get().isPlaying }),
+  toggleShuffle: () => {
+    const next = !get().shuffle;
+    set({ shuffle: next });
+    try {
+      localStorage.setItem(SHUFFLE_STORAGE_KEY, String(next));
+    } catch {
+      // ignore
+    }
+  },
+  setShuffle: (value) => {
+    set({ shuffle: value });
+    try {
+      localStorage.setItem(SHUFFLE_STORAGE_KEY, String(value));
+    } catch {
+      // ignore
+    }
+  },
+  pause: () => set({ isPlaying: false }),
+  play: () => set({ isPlaying: true }),
+  next: () => {
+    const { queue, currentTrackId } = get();
+    if (!currentTrackId || queue.length === 0) {
+      return;
+    }
+    const currentIndex = queue.indexOf(currentTrackId);
+    const nextIndex = currentIndex + 1;
+    if (nextIndex < queue.length) {
+      set({ currentTrackId: queue[nextIndex], isPlaying: true });
+    }
+  },
+  previous: () => {
+    const { queue, currentTrackId } = get();
+    if (!currentTrackId || queue.length === 0) {
+      return;
+    }
+    const currentIndex = queue.indexOf(currentTrackId);
+    const prevIndex = currentIndex - 1;
+    if (prevIndex >= 0) {
+      set({ currentTrackId: queue[prevIndex], isPlaying: true });
+    }
+  },
+  setVolume: (volume) => {
+    set({ volume });
+    try {
+      localStorage.setItem(VOLUME_STORAGE_KEY, String(volume));
+    } catch {
+      // ignore
+    }
+  },
+  setCurrentTime: (time) => set({ currentTime: time }),
+  setDuration: (duration) => set({ duration }),
+  clearQueue: () =>
+    set({ queue: [], currentTrackId: null, isPlaying: false }),
+}));
