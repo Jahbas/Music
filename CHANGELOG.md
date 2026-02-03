@@ -12,6 +12,7 @@
 - **Sidebar organization**: Playlists and folders can be pinned, ordered, and edited directly from the sidebar, with updated visuals for banners, icons, and context actions.
 - **Selection and bulk actions**: Improved multi-select behavior for tracks in folder and liked views, including clearer select-all behavior and bulk delete operations.
 - **Playback consistency**: Folder and liked views now integrate with the global player queue, shuffle state, and per-track play actions so playback behaves consistently across views.
+- **Playback speed control**: Added an Apple-style speed menu next to the volume control with presets for 0.5×, 0.75×, 1×, 1.25×, and 1.5× that updates the audio playback rate in real time.
 
 ### Internal
 

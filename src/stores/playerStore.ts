@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 const VOLUME_STORAGE_KEY = "player-volume";
 const SHUFFLE_STORAGE_KEY = "player-shuffle";
+const PLAYBACK_RATE_STORAGE_KEY = "player-playback-rate";
 
 function getStoredVolume(): number {
   try {
@@ -23,6 +24,18 @@ function getStoredShuffle(): boolean {
   }
 }
 
+function getStoredPlaybackRate(): number {
+  try {
+    const raw = localStorage.getItem(PLAYBACK_RATE_STORAGE_KEY);
+    if (raw == null) return 1;
+    const n = Number(raw);
+    if (Number.isFinite(n) && n >= 0.25 && n <= 2) return n;
+  } catch {
+    // ignore
+  }
+  return 1;
+}
+
 function shuffleArray<T>(arr: T[]): T[] {
   const out = [...arr];
   for (let i = out.length - 1; i > 0; i--) {
@@ -40,6 +53,7 @@ type PlayerState = {
   volume: number;
   currentTime: number;
   duration: number;
+  playbackRate: number;
   setQueue: (queue: string[]) => void;
   playTrack: (trackId: string, queue?: string[]) => void;
   playTrackIds: (trackIds: string[], options?: { shuffle?: boolean }) => void;
@@ -51,6 +65,7 @@ type PlayerState = {
   previous: () => void;
   setVolume: (volume: number) => void;
   setShuffle: (value: boolean) => void;
+  setPlaybackRate: (rate: number) => void;
   setCurrentTime: (time: number) => void;
   setDuration: (duration: number) => void;
   clearQueue: () => void;
@@ -64,6 +79,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   volume: getStoredVolume(),
   currentTime: 0,
   duration: 0,
+  playbackRate: getStoredPlaybackRate(),
   setQueue: (queue) => set({ queue }),
   playTrack: (trackId, queue) => {
     if (queue) {
@@ -124,6 +140,16 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     set({ volume });
     try {
       localStorage.setItem(VOLUME_STORAGE_KEY, String(volume));
+    } catch {
+      // ignore
+    }
+  },
+  setPlaybackRate: (rate) => {
+    const clamped =
+      Number.isFinite(rate) && rate > 0 ? Math.min(Math.max(rate, 0.25), 2) : 1;
+    set({ playbackRate: clamped });
+    try {
+      localStorage.setItem(PLAYBACK_RATE_STORAGE_KEY, String(clamped));
     } catch {
       // ignore
     }

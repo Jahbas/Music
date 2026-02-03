@@ -33,6 +33,7 @@ export const useAudio = () => {
   const currentTrackId = usePlayerStore((state) => state.currentTrackId);
   const isPlaying = usePlayerStore((state) => state.isPlaying);
   const volume = usePlayerStore((state) => state.volume);
+  const playbackRate = usePlayerStore((state) => state.playbackRate);
   const currentTime = usePlayerStore((state) => state.currentTime);
   const setCurrentTime = usePlayerStore((state) => state.setCurrentTime);
   const setDuration = usePlayerStore((state) => state.setDuration);
@@ -45,7 +46,8 @@ export const useAudio = () => {
     }
     const audio = audioRef.current;
     audio.volume = volume;
-  }, [volume]);
+    audio.playbackRate = playbackRate;
+  }, [volume, playbackRate]);
 
   const timeupdateThrottleRef = useRef<number>(0);
   useEffect(() => {

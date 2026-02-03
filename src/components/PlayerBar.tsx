@@ -15,6 +15,8 @@ export const PlayerBar = () => {
   const previousVolumeRef = useRef<number>(0.8);
   const [isDraggingProgress, setIsDraggingProgress] = useState(false);
   const [dragTime, setDragTime] = useState(0);
+  const [isSpeedMenuOpen, setIsSpeedMenuOpen] = useState(false);
+  const playbackSpeedRef = useRef<HTMLDivElement | null>(null);
 
   const tracks = useLibraryStore((state) => state.tracks);
   const toggleTrackLiked = useLibraryStore((state) => state.toggleTrackLiked);
@@ -25,6 +27,7 @@ export const PlayerBar = () => {
     duration,
     volume,
     shuffle,
+    playbackRate,
     togglePlay,
     toggleShuffle,
     next,
@@ -42,6 +45,17 @@ export const PlayerBar = () => {
   const displayTime = isDraggingProgress ? dragTime : currentTime;
   const progressPercent = duration > 0 ? (displayTime / duration) * 100 : 0;
   const volumePercent = volume * 100;
+
+  const speedOptions = [0.5, 0.75, 1, 1.25, 1.5] as const;
+
+  const handleToggleSpeedMenu = useCallback(() => {
+    setIsSpeedMenuOpen((prev) => !prev);
+  }, []);
+
+  const handleSelectSpeed = useCallback((value: number) => {
+    usePlayerStore.getState().setPlaybackRate(value);
+    setIsSpeedMenuOpen(false);
+  }, []);
 
   const handleProgressClick = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
@@ -103,6 +117,23 @@ export const PlayerBar = () => {
     window.addEventListener("mouseup", onGlobalMouseUp);
     return () => window.removeEventListener("mouseup", onGlobalMouseUp);
   }, [isDraggingProgress, setCurrentTime]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const root = playbackSpeedRef.current;
+      if (!root) return;
+      if (event.target instanceof Node && root.contains(event.target)) {
+        return;
+      }
+      setIsSpeedMenuOpen(false);
+    };
+    if (isSpeedMenuOpen) {
+      window.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      window.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isSpeedMenuOpen]);
 
   return (
     <div className="player-bar">
@@ -226,6 +257,53 @@ export const PlayerBar = () => {
         </div>
       </div>
       <div className="player-volume">
+        <div
+          className="playback-speed"
+          ref={playbackSpeedRef}
+        >
+          <button
+            type="button"
+            className="playback-speed-button"
+            onClick={handleToggleSpeedMenu}
+            aria-haspopup="listbox"
+            aria-expanded={isSpeedMenuOpen}
+            title="Playback speed"
+          >
+            <span>{`${playbackRate.toFixed(2).replace(/\.00$/, "").replace(/0$/, "")}×`}</span>
+            <span className="playback-speed-chevron" aria-hidden>
+              <svg
+                width="10"
+                height="10"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </span>
+          </button>
+          {isSpeedMenuOpen && (
+            <div className="playback-speed-menu" role="listbox">
+              {speedOptions.map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  className={`playback-speed-option${
+                    playbackRate === value ? " playback-speed-option--active" : ""
+                  }`}
+                  onClick={() => handleSelectSpeed(value)}
+                  role="option"
+                  aria-selected={playbackRate === value}
+                >
+                  {`${value}×`}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         <button
           type="button"
           className="volume-mute ghost-button"
@@ -233,13 +311,13 @@ export const PlayerBar = () => {
           title={volume > 0 ? "Mute" : "Unmute"}
           aria-label={volume > 0 ? "Mute" : "Unmute"}
         >
-          {currentTrack
-            ? volume === 0
-              ? <VolumeMutedIcon />
-              : volume < 0.5
-                ? <VolumeLowIcon />
-                : <VolumeHighIcon />
-            : null}
+          {volume === 0 ? (
+            <VolumeMutedIcon />
+          ) : volume < 0.5 ? (
+            <VolumeLowIcon />
+          ) : (
+            <VolumeHighIcon />
+          )}
         </button>
         <div
           className="slider-wrap slider-volume"
