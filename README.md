@@ -1,4 +1,4 @@
-# Liquid Music
+# Music
 Best fully open source music player.
 React + Vite + TypeScript. Music library and player; tracks and playlists stored in IndexedDB.
 
