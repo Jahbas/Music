@@ -1,20 +1,23 @@
 import { useMemo, useState, useCallback, useRef, useLayoutEffect, useEffect } from "react";
 import type { Track } from "../types";
 
-type SortKey = "title" | "album" | "dateAdded" | "duration";
+type SortKey = "title" | "album" | "dateAdded" | "duration" | "liked";
 type SortDir = "asc" | "desc";
 
 type TrackListProps = {
   title?: string;
   tracks: Track[];
+  playlistNamesByTrackId?: Record<string, string[]>;
   selectedIds: string[];
   onToggleSelect: (trackId: string) => void;
+  onSelectAll?: (trackIds: string[]) => void;
   onPlay: (trackId: string) => void;
   onDragStart: (trackIds: string[]) => void;
   onDragEnd: () => void;
   onDeleteSelected?: (trackIds: string[]) => void;
   onDeleteLibrary?: () => void;
   highlightTrackId?: string;
+  onToggleLike?: (trackId: string) => void;
 };
 
 const formatDuration = (seconds: number) => {
@@ -25,7 +28,12 @@ const formatDuration = (seconds: number) => {
   return `${minutes}:${secs.toString().padStart(2, "0")}`;
 };
 
-function sortTracks(tracks: Track[], sortBy: SortKey, sortDir: SortDir): Track[] {
+function sortTracks(
+  tracks: Track[],
+  sortBy: SortKey,
+  sortDir: SortDir,
+  playlistNamesByTrackId?: Record<string, string[]>
+): Track[] {
   const sorted = [...tracks].sort((a, b) => {
     let cmp = 0;
     if (sortBy === "duration") {
@@ -33,9 +41,17 @@ function sortTracks(tracks: Track[], sortBy: SortKey, sortDir: SortDir): Track[]
     } else if (sortBy === "title") {
       cmp = a.title.localeCompare(b.title, undefined, { sensitivity: "base" });
     } else if (sortBy === "album") {
-      cmp = a.album.localeCompare(b.album, undefined, { sensitivity: "base" });
+      const aPlaylists = playlistNamesByTrackId?.[a.id]?.join(", ") ?? "";
+      const bPlaylists = playlistNamesByTrackId?.[b.id]?.join(", ") ?? "";
+      cmp = aPlaylists.localeCompare(bPlaylists, undefined, {
+        sensitivity: "base",
+      });
     } else if (sortBy === "dateAdded") {
       cmp = a.addedAt - b.addedAt;
+    } else if (sortBy === "liked") {
+      const aLiked = a.liked ? 1 : 0;
+      const bLiked = b.liked ? 1 : 0;
+      cmp = aLiked - bLiked;
     }
     if (cmp !== 0) return sortDir === "asc" ? cmp : -cmp;
     return a.id.localeCompare(b.id);
@@ -46,14 +62,17 @@ function sortTracks(tracks: Track[], sortBy: SortKey, sortDir: SortDir): Track[]
 export const TrackList = ({
   title,
   tracks,
+  playlistNamesByTrackId,
   selectedIds,
   onToggleSelect,
+  onSelectAll,
   onPlay,
   onDragStart,
   onDragEnd,
   onDeleteSelected,
   onDeleteLibrary,
   highlightTrackId,
+  onToggleLike,
 }: TrackListProps) => {
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const [sortState, setSortState] = useState<{ key: SortKey; dir: SortDir } | null>(null);
@@ -101,8 +120,14 @@ export const TrackList = ({
 
   const sortedTracks = useMemo(() => {
     if (!sortState) return tracks;
-    return sortTracks(tracks, sortState.key, sortState.dir);
-  }, [tracks, sortState]);
+    return sortTracks(tracks, sortState.key, sortState.dir, playlistNamesByTrackId);
+  }, [tracks, sortState, playlistNamesByTrackId]);
+
+  const allTrackIds = useMemo(() => sortedTracks.map((track) => track.id), [sortedTracks]);
+  const allSelected = useMemo(
+    () => allTrackIds.length > 0 && allTrackIds.every((id) => selectedSet.has(id)),
+    [allTrackIds, selectedSet]
+  );
 
   useLayoutEffect(() => {
     if (!flipPendingRef.current || !trackTableRef.current) return;
@@ -222,7 +247,38 @@ export const TrackList = ({
       <div className="track-table" ref={trackTableRef}>
         <div className="track-row track-head">
           <div className="track-row-col-index">
-            <span className="track-head-spacer" aria-hidden />
+            {onSelectAll ? (
+              <button
+                type="button"
+                className="track-checkbox"
+                role="checkbox"
+                aria-checked={allSelected}
+                aria-label={allSelected ? "Deselect all tracks" : "Select all tracks"}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onSelectAll(allTrackIds);
+                }}
+              >
+                {(allSelected || selectedIds.length > 0) && (
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                )}
+              </button>
+            ) : (
+              <span className="track-head-spacer" aria-hidden />
+            )}
             <span>#</span>
           </div>
           <button
@@ -243,6 +299,36 @@ export const TrackList = ({
           </button>
           <button
             type="button"
+            className="track-head-sort track-like-header-button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleSort("liked");
+            }}
+            title="Sort by liked"
+            aria-label="Sort by liked"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M20.8 4.6a5 5 0 0 0-7.1 0L12 6.3l-1.7-1.7a5 5 0 0 0-7.1 7.1l1.7 1.7L12 21l7.1-7.6 1.7-1.7a5 5 0 0 0 0-7.1z" />
+            </svg>
+            {sortState?.key === "liked" && (
+              <span className="track-head-sort-icon" aria-hidden>
+                {sortState.dir === "asc" ? "↑" : "↓"}
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
             className="track-head-sort"
             onClick={(e) => {
               e.preventDefault();
@@ -250,7 +336,7 @@ export const TrackList = ({
               handleSort("album");
             }}
           >
-            Album
+            Playlists
             {sortState?.key === "album" && (
               <span className="track-head-sort-icon" aria-hidden>
                 {sortState.dir === "asc" ? "↑" : "↓"}
@@ -357,7 +443,40 @@ export const TrackList = ({
                 <span className="track-title-sep" aria-hidden>·</span>
                 <span className="muted track-title-artist">{track.artist}</span>
               </div>
-              <div className="track-album muted">{track.album}</div>
+              <div className="track-like-cell">
+                {onToggleLike && (
+                  <button
+                    type="button"
+                    className={`track-like-button${track.liked ? " track-like-button--active" : ""}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onToggleLike(track.id);
+                    }}
+                    title={track.liked ? "Remove from Liked Songs" : "Save to Liked Songs"}
+                    aria-label={track.liked ? "Remove from Liked Songs" : "Save to Liked Songs"}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill={track.liked ? "currentColor" : "none"}
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden
+                    >
+                      <path d="M20.8 4.6a5 5 0 0 0-7.1 0L12 6.3l-1.7-1.7a5 5 0 0 0-7.1 7.1l1.7 1.7L12 21l7.1-7.6 1.7-1.7a5 5 0 0 0 0-7.1z" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+              <div className="track-album muted">
+                {playlistNamesByTrackId?.[track.id]
+                  ? playlistNamesByTrackId[track.id].join(", ")
+                  : ""}
+              </div>
               <div className="muted">
                 {new Date(track.addedAt).toLocaleDateString()}
               </div>

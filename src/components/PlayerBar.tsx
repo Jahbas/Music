@@ -17,6 +17,7 @@ export const PlayerBar = () => {
   const [dragTime, setDragTime] = useState(0);
 
   const tracks = useLibraryStore((state) => state.tracks);
+  const toggleTrackLiked = useLibraryStore((state) => state.toggleTrackLiked);
   const {
     currentTrackId,
     isPlaying,
@@ -112,16 +113,18 @@ export const PlayerBar = () => {
             style={{ backgroundImage: `url(${artworkUrl})` }}
           />
         )}
-        <div>
-          <div className="player-track-title">
-            {currentTrack?.title ?? ""}
+        <div className="player-track-main">
+          <div className="player-track-text">
+            <div className="player-track-title">
+              {currentTrack?.title ?? ""}
+            </div>
+            {currentTrack?.artist &&
+              currentTrack.artist.trim().toLowerCase() !== "unknown artist" && (
+                <div className="player-track-artist">
+                  {currentTrack.artist}
+                </div>
+              )}
           </div>
-          {currentTrack?.artist &&
-            currentTrack.artist.trim().toLowerCase() !== "unknown artist" && (
-              <div className="player-track-artist">
-                {currentTrack.artist}
-              </div>
-            )}
         </div>
       </div>
       <div className="player-controls">
@@ -138,7 +141,7 @@ export const PlayerBar = () => {
           </button>
           <button
             type="button"
-            className="ghost-button"
+            className="ghost-button player-previous"
             onClick={previous}
             title="Previous"
             aria-label="Previous track"
@@ -163,6 +166,39 @@ export const PlayerBar = () => {
           >
             <NextIcon />
           </button>
+          {currentTrack && (
+            <button
+              type="button"
+              className={`player-like-button${
+                currentTrack.liked ? " player-like-button--active" : ""
+              }`}
+              onClick={() => toggleTrackLiked(currentTrack.id)}
+              title={
+                currentTrack.liked
+                  ? "Remove from Liked Songs"
+                  : "Save to Liked Songs"
+              }
+              aria-label={
+                currentTrack.liked
+                  ? "Remove from Liked Songs"
+                  : "Save to Liked Songs"
+              }
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill={currentTrack.liked ? "currentColor" : "none"}
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <path d="M20.8 4.6a5 5 0 0 0-7.1 0L12 6.3l-1.7-1.7a5 5 0 0 0-7.1 7.1l1.7 1.7L12 21l7.1-7.6 1.7-1.7a5 5 0 0 0 0-7.1z" />
+              </svg>
+            </button>
+          )}
         </div>
         <div className="progress-row">
           <span className="progress-time">{formatTime(displayTime)}</span>

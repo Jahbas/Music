@@ -18,6 +18,7 @@ type LibraryState = {
   addFileHandles: (handles: FileSystemFileHandle[]) => Promise<string[]>;
   removeTrack: (id: string) => Promise<void>;
   clearLibrary: () => Promise<void>;
+  toggleTrackLiked: (id: string) => Promise<void>;
 };
 
 export const useLibraryStore = create<LibraryState>((set, get) => ({
@@ -38,20 +39,24 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
         startedAt: Date.now(),
       },
     });
+    const updateProgress = (loaded: number) => {
+      set((state) =>
+        state.addProgress
+          ? {
+              addProgress: {
+                ...state.addProgress,
+                loaded,
+              },
+            }
+          : state
+      );
+    };
     try {
       for (let i = 0; i < list.length; i++) {
         const file = list[i];
         if (!isSupportedAudioFile(file)) {
-          set((state) =>
-            state.addProgress
-              ? {
-                  addProgress: {
-                    ...state.addProgress,
-                    loaded: i + 1,
-                  },
-                }
-              : state
-          );
+          updateProgress(i + 1);
+          await new Promise((r) => setTimeout(r, 0));
           continue;
         }
         const { track, artworkBlob } = await fileToTrack(file, "blob");
@@ -61,16 +66,8 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
           track.artworkId = artworkId;
         }
         newTracks.push(track);
-        set((state) =>
-          state.addProgress
-            ? {
-                addProgress: {
-                  ...state.addProgress,
-                  loaded: i + 1,
-                },
-              }
-            : state
-        );
+        updateProgress(i + 1);
+        await new Promise((r) => setTimeout(r, 0));
       }
       if (newTracks.length > 0) {
         await trackDb.putMany(newTracks);
@@ -91,21 +88,25 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
         startedAt: Date.now(),
       },
     });
+    const updateProgress = (loaded: number) => {
+      set((state) =>
+        state.addProgress
+          ? {
+              addProgress: {
+                ...state.addProgress,
+                loaded,
+              },
+            }
+          : state
+      );
+    };
     try {
       for (let i = 0; i < list.length; i++) {
         const handle = list[i];
         const file = await handle.getFile();
         if (!isSupportedAudioFile(file)) {
-          set((state) =>
-            state.addProgress
-              ? {
-                  addProgress: {
-                    ...state.addProgress,
-                    loaded: i + 1,
-                  },
-                }
-              : state
-          );
+          updateProgress(i + 1);
+          await new Promise((r) => setTimeout(r, 0));
           continue;
         }
         const { track, artworkBlob } = await fileToTrack(
@@ -119,16 +120,8 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
           track.artworkId = artworkId;
         }
         newTracks.push(track);
-        set((state) =>
-          state.addProgress
-            ? {
-                addProgress: {
-                  ...state.addProgress,
-                  loaded: i + 1,
-                },
-              }
-            : state
-        );
+        updateProgress(i + 1);
+        await new Promise((r) => setTimeout(r, 0));
       }
       if (newTracks.length > 0) {
         await trackDb.putMany(newTracks);
@@ -146,5 +139,20 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   clearLibrary: async () => {
     await trackDb.clear();
     set({ tracks: [] });
+  },
+  toggleTrackLiked: async (id) => {
+    const currentTracks = get().tracks;
+    const existing = currentTracks.find((track) => track.id === id);
+    if (!existing) return;
+    const updated: Track = {
+      ...existing,
+      liked: !existing.liked,
+    };
+    await trackDb.put(updated);
+    set({
+      tracks: currentTracks.map((track) =>
+        track.id === id ? updated : track
+      ),
+    });
   },
 }));

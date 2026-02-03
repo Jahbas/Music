@@ -12,6 +12,7 @@ type PlaylistState = {
     description?: string;
     imageFile?: File;
     color?: string;
+    folderId?: string;
   }) => Promise<Playlist>;
   addTracksToPlaylist: (playlistId: string, trackIds: string[]) => Promise<void>;
   removeTrackFromPlaylist: (
@@ -35,6 +36,7 @@ type PlaylistState = {
       bannerImageId?: string;
       pinned?: boolean;
       order?: number | null;
+      folderId?: string | null;
     }
   ) => Promise<void>;
   deletePlaylist: (playlistId: string) => Promise<void>;
@@ -48,7 +50,7 @@ export const usePlaylistStore = create<PlaylistState>((set, get) => ({
     const playlists = await playlistDb.getAll();
     set({ playlists, isLoading: false });
   },
-  createPlaylist: async ({ name, description, imageFile, color }) => {
+  createPlaylist: async ({ name, description, imageFile, color, folderId }) => {
     const now = Date.now();
     const playlist: Playlist = {
       id: crypto.randomUUID(),
@@ -59,6 +61,7 @@ export const usePlaylistStore = create<PlaylistState>((set, get) => ({
       trackIds: [],
       createdAt: now,
       updatedAt: now,
+      folderId,
     };
     if (imageFile) {
       const imageId = crypto.randomUUID();
@@ -154,7 +157,7 @@ export const usePlaylistStore = create<PlaylistState>((set, get) => ({
   },
   updatePlaylist: async (
     playlistId,
-    { name, description, color, bannerImageId, pinned, order }
+    { name, description, color, bannerImageId, pinned, order, folderId }
   ) => {
     const resolvedOrder =
       order === null ? undefined : order !== undefined ? order : undefined;
@@ -171,6 +174,7 @@ export const usePlaylistStore = create<PlaylistState>((set, get) => ({
         ...(bannerImageId !== undefined && { bannerImageId }),
         ...(pinned !== undefined && { pinned }),
         ...(hasOrder && { order: resolvedOrder }),
+        ...(folderId !== undefined && { folderId: folderId === null ? undefined : folderId }),
         updatedAt: Date.now(),
       };
     });

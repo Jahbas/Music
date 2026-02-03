@@ -5,6 +5,7 @@ import { useLibraryStore } from "../stores/libraryStore";
 import { usePlayHistoryStore } from "../stores/playHistoryStore";
 import { usePlayerStore } from "../stores/playerStore";
 import { usePlaylistStore } from "../stores/playlistStore";
+import { useFolderStore } from "../stores/folderStore";
 import { useThemeStore } from "../stores/themeStore";
 import { AddSongsProgress } from "./AddSongsProgress";
 import { DragAddToPlaylistOverlay } from "./DragAddToPlaylistOverlay";
@@ -17,6 +18,7 @@ export const Layout = () => {
   const hydrateTheme = useThemeStore((state) => state.hydrate);
   const hydrateLibrary = useLibraryStore((state) => state.hydrate);
   const hydratePlaylists = usePlaylistStore((state) => state.hydrate);
+  const hydrateFolders = useFolderStore((state) => state.hydrate);
   const hydratePlayHistory = usePlayHistoryStore((state) => state.hydrate);
   useAudio();
 
@@ -26,8 +28,9 @@ export const Layout = () => {
     void hydrateTheme();
     void hydrateLibrary();
     void hydratePlaylists();
+    void hydrateFolders();
     void hydratePlayHistory();
-  }, [hydrateTheme, hydrateLibrary, hydratePlaylists, hydratePlayHistory]);
+  }, [hydrateTheme, hydrateLibrary, hydratePlaylists, hydrateFolders, hydratePlayHistory]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {

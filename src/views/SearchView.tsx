@@ -12,11 +12,25 @@ export const SearchView = () => {
   const query = (searchParams.get("q") ?? "").toLowerCase();
   const tracks = useLibraryStore((state) => state.tracks);
   const removeTrack = useLibraryStore((state) => state.removeTrack);
+  const toggleTrackLiked = useLibraryStore((state) => state.toggleTrackLiked);
   const playlists = usePlaylistStore((state) => state.playlists);
   const { onDragStart, onDragEnd } = useDragContext();
   const playTrack = usePlayerStore((state) => state.playTrack);
   const setQueue = usePlayerStore((state) => state.setQueue);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  const playlistNamesByTrackId = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    for (const playlist of playlists) {
+      for (const trackId of playlist.trackIds) {
+        if (!map[trackId]) {
+          map[trackId] = [];
+        }
+        map[trackId].push(playlist.name);
+      }
+    }
+    return map;
+  }, [playlists]);
 
   const filteredTracks = useMemo(() => {
     if (!query) {
@@ -52,6 +66,14 @@ export const SearchView = () => {
     setQueue(queue);
     playTrack(trackId, queue);
   };
+
+  const handleSelectAll = useCallback((trackIds: string[]) => {
+    setSelectedIds((prev) => {
+      const allSelected =
+        trackIds.length > 0 && trackIds.every((id) => prev.includes(id));
+      return allSelected ? [] : trackIds;
+    });
+  }, []);
 
   const handleDeleteSelected = useCallback(
     async (trackIds: string[]) => {
@@ -89,12 +111,15 @@ export const SearchView = () => {
       <TrackList
         title="Tracks"
         tracks={filteredTracks}
+        playlistNamesByTrackId={playlistNamesByTrackId}
         selectedIds={selectedIds}
         onToggleSelect={handleToggleSelect}
+        onSelectAll={handleSelectAll}
         onPlay={handlePlay}
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
         onDeleteSelected={handleDeleteSelected}
+        onToggleLike={toggleTrackLiked}
       />
     </div>
   );

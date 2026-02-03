@@ -107,7 +107,7 @@ export const useAudio = () => {
         URL.revokeObjectURL(currentUrl);
       }
     };
-  }, [currentTrackId, isPlaying, addPlay]);
+  }, [currentTrackId, addPlay]);
 
   useEffect(() => {
     const audio = audioRef.current;

@@ -22,6 +22,7 @@ export const PlaylistView = () => {
   );
   const tracks = useLibraryStore((state) => state.tracks);
   const addFiles = useLibraryStore((state) => state.addFiles);
+  const toggleTrackLiked = useLibraryStore((state) => state.toggleTrackLiked);
   const playTrack = usePlayerStore((state) => state.playTrack);
   const setQueue = usePlayerStore((state) => state.setQueue);
   const playTrackIds = usePlayerStore((state) => state.playTrackIds);
@@ -30,6 +31,19 @@ export const PlaylistView = () => {
   const { onDragStart, onDragEnd } = useDragContext();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isDraggingFiles, setIsDraggingFiles] = useState(false);
+
+  const playlistNamesByTrackId = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    for (const playlist of playlists) {
+      for (const trackId of playlist.trackIds) {
+        if (!map[trackId]) {
+          map[trackId] = [];
+        }
+        map[trackId].push(playlist.name);
+      }
+    }
+    return map;
+  }, [playlists]);
 
   useEffect(() => {
     if (!highlightTrackId) return;
@@ -65,6 +79,14 @@ export const PlaylistView = () => {
     setQueue(queue);
     playTrack(trackId, queue);
   };
+
+  const handleSelectAll = useCallback((trackIds: string[]) => {
+    setSelectedIds((prev) => {
+      const allSelected =
+        trackIds.length > 0 && trackIds.every((id) => prev.includes(id));
+      return allSelected ? [] : trackIds;
+    });
+  }, []);
 
   const handlePlayPlaylist = () => {
     if (playlistTracks.length === 0) return;
@@ -179,13 +201,16 @@ export const PlaylistView = () => {
       <TrackList
         title="Tracks"
         tracks={playlistTracks}
+        playlistNamesByTrackId={playlistNamesByTrackId}
         selectedIds={selectedIds}
         onToggleSelect={handleToggleSelect}
+        onSelectAll={handleSelectAll}
         onPlay={handlePlay}
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
         onDeleteSelected={handleDeleteSelected}
         highlightTrackId={highlightTrackId}
+        onToggleLike={toggleTrackLiked}
       />
     </div>
   );

@@ -1,5 +1,5 @@
 import { openDB, type DBSchema } from "idb";
-import type { PlayHistoryEntry, Playlist, ThemeMode, Track } from "../types";
+import type { PlayHistoryEntry, Playlist, PlaylistFolder, ThemeSettings, Track } from "../types";
 
 type ImageEntry = {
   id: string;
@@ -15,13 +15,17 @@ interface SpotifyDb extends DBSchema {
     key: string;
     value: Playlist;
   };
+  folders: {
+    key: string;
+    value: PlaylistFolder;
+  };
   images: {
     key: string;
     value: ImageEntry;
   };
   theme: {
     key: string;
-    value: ThemeMode;
+  value: ThemeSettings;
   };
   playHistory: {
     key: string;
@@ -30,7 +34,7 @@ interface SpotifyDb extends DBSchema {
 }
 
 const DB_NAME = "spotify-like-player";
-const DB_VERSION = 2;
+const DB_VERSION = 4;
 
 const dbPromise = openDB<SpotifyDb>(DB_NAME, DB_VERSION, {
   upgrade(db, oldVersion) {
@@ -39,6 +43,9 @@ const dbPromise = openDB<SpotifyDb>(DB_NAME, DB_VERSION, {
     }
     if (!db.objectStoreNames.contains("playlists")) {
       db.createObjectStore("playlists", { keyPath: "id" });
+    }
+    if (!db.objectStoreNames.contains("folders")) {
+      db.createObjectStore("folders", { keyPath: "id" });
     }
     if (!db.objectStoreNames.contains("images")) {
       db.createObjectStore("images", { keyPath: "id" });
@@ -123,11 +130,37 @@ export const themeDb = {
   async get() {
     return (await dbPromise).get("theme", "theme");
   },
-  async set(mode: ThemeMode) {
-    return (await dbPromise).put("theme", mode, "theme");
+  async set(settings: ThemeSettings) {
+    return (await dbPromise).put("theme", settings, "theme");
   },
   async clear() {
     return (await dbPromise).delete("theme", "theme");
+  },
+};
+
+export const folderDb = {
+  async getAll() {
+    return (await dbPromise).getAll("folders");
+  },
+  async put(folder: PlaylistFolder) {
+    return (await dbPromise).put("folders", folder);
+  },
+  async putMany(folders: PlaylistFolder[]) {
+    const db = await dbPromise;
+    const tx = db.transaction("folders", "readwrite");
+    for (const folder of folders) {
+      tx.store.put(folder);
+    }
+    await tx.done;
+  },
+  async remove(id: string) {
+    return (await dbPromise).delete("folders", id);
+  },
+  async clear() {
+    const db = await dbPromise;
+    const tx = db.transaction("folders", "readwrite");
+    await tx.store.clear();
+    await tx.done;
   },
 };
 

@@ -41,6 +41,7 @@ export const fileToTrack = async (
     sourceType,
     fileBlob: sourceType === "blob" ? file : undefined,
     fileHandle: sourceType === "handle" ? fileHandle : undefined,
+    liked: false,
   };
   return { track, artworkBlob };
 };

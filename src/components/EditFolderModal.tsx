@@ -1,9 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import { usePlaylistStore } from "../stores/playlistStore";
 import { useFolderStore } from "../stores/folderStore";
 import { Modal } from "./Modal";
-import { FolderSelect } from "./FolderSelect";
-import type { Playlist } from "../types";
+import type { PlaylistFolder } from "../types";
 
 const NAME_MAX_LENGTH = 32;
 
@@ -17,110 +15,106 @@ function formatDate(ts: number): string {
   });
 }
 
-type EditPlaylistModalProps = {
+type EditFolderModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  playlist: Playlist | null;
+  folder: PlaylistFolder | null;
   onDeleted?: () => void;
 };
 
-export const EditPlaylistModal = ({
+export const EditFolderModal = ({
   isOpen,
   onClose,
-  playlist,
+  folder,
   onDeleted,
-}: EditPlaylistModalProps) => {
-  const updatePlaylist = usePlaylistStore((state) => state.updatePlaylist);
-  const updatePlaylistImage = usePlaylistStore(
-    (state) => state.updatePlaylistImage
+}: EditFolderModalProps) => {
+  const updateFolder = useFolderStore((state) => state.updateFolder);
+  const updateFolderIcon = useFolderStore(
+    (state) => state.updateFolderIcon
   );
-  const updatePlaylistBanner = usePlaylistStore(
-    (state) => state.updatePlaylistBanner
+  const updateFolderBanner = useFolderStore(
+    (state) => state.updateFolderBanner
   );
-  const deletePlaylist = usePlaylistStore((state) => state.deletePlaylist);
-  const folders = useFolderStore((state) => state.folders);
+  const deleteFolder = useFolderStore((state) => state.deleteFolder);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [pinned, setPinned] = useState(false);
-  const [folderId, setFolderId] = useState<string>("");
-  const [coverFile, setCoverFile] = useState<File | undefined>(undefined);
+  const [iconFile, setIconFile] = useState<File | undefined>(undefined);
   const [bannerFile, setBannerFile] = useState<File | undefined>(undefined);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [infoExpanded, setInfoExpanded] = useState(false);
-  const coverInputRef = useRef<HTMLInputElement>(null);
+  const iconInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (playlist) {
-      setName(playlist.name);
-      setDescription(playlist.description ?? "");
-      setPinned(playlist.pinned ?? false);
-      setFolderId(playlist.folderId ?? "");
-      setCoverFile(undefined);
+    if (folder) {
+      setName(folder.name);
+      setDescription(folder.description ?? "");
+      setPinned(folder.pinned ?? false);
+      setIconFile(undefined);
       setBannerFile(undefined);
       setConfirmDelete(false);
     }
-  }, [playlist, isOpen]);
+  }, [folder, isOpen]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     const trimmed = name.trim();
-    if (!playlist || !trimmed || trimmed.length > NAME_MAX_LENGTH) {
+    if (!folder || !trimmed || trimmed.length > NAME_MAX_LENGTH) {
       return;
     }
-    await updatePlaylist(playlist.id, {
+    await updateFolder(folder.id, {
       name: trimmed,
       description: description.trim() || undefined,
       pinned,
-      folderId: folderId || null,
     });
-    if (coverFile) {
-      await updatePlaylistImage(playlist.id, coverFile);
+    if (iconFile) {
+      await updateFolderIcon(folder.id, iconFile);
     }
     if (bannerFile) {
-      await updatePlaylistBanner(playlist.id, bannerFile);
+      await updateFolderBanner(folder.id, bannerFile);
     }
     onClose();
   };
 
-  const handleRemoveCover = async () => {
-    if (!playlist) return;
-    await updatePlaylistImage(playlist.id, null);
-    setCoverFile(undefined);
-    if (coverInputRef.current) coverInputRef.current.value = "";
+  const handleRemoveIcon = async () => {
+    if (!folder) return;
+    await updateFolderIcon(folder.id, null);
+    setIconFile(undefined);
+    if (iconInputRef.current) iconInputRef.current.value = "";
   };
 
   const handleRemoveBanner = async () => {
-    if (!playlist) return;
-    await updatePlaylistBanner(playlist.id, null);
+    if (!folder) return;
+    await updateFolderBanner(folder.id, null);
     setBannerFile(undefined);
     if (bannerInputRef.current) bannerInputRef.current.value = "";
   };
 
   const handleDelete = async () => {
-    if (!playlist) {
+    if (!folder) {
       return;
     }
     if (!confirmDelete) {
       setConfirmDelete(true);
       return;
     }
-    await deletePlaylist(playlist.id);
+    await deleteFolder(folder.id);
     setConfirmDelete(false);
     onClose();
     onDeleted?.();
   };
 
-  if (!playlist) {
+  if (!folder) {
     return null;
   }
 
-  const hasCover = playlist.imageId || coverFile;
-  const hasBanner = playlist.bannerImageId || bannerFile;
+  const hasIcon = folder.iconImageId || iconFile;
+  const hasBanner = folder.bannerImageId || bannerFile;
 
   return (
     <Modal
-      title="Playlist settings"
+      title="Folder settings"
       isOpen={isOpen}
       onClose={onClose}
       className="settings-modal"
@@ -130,13 +124,13 @@ export const EditPlaylistModal = ({
           <section className="settings-section">
             <h4 className="settings-section-title">Basic</h4>
             <label>
-              Playlist name
+              Folder name
               <input
                 value={name}
                 onChange={(event) =>
                   setName(event.target.value.slice(0, NAME_MAX_LENGTH))
                 }
-                placeholder="My Playlist"
+                placeholder="My Folder"
                 maxLength={NAME_MAX_LENGTH}
               />
             </label>
@@ -154,34 +148,34 @@ export const EditPlaylistModal = ({
           <section className="settings-section">
             <h4 className="settings-section-title">Appearance</h4>
             <div className="form-image-upload">
-              <span className="form-image-upload-label">Cover image</span>
+              <span className="form-image-upload-label">Icon image</span>
               <input
-                ref={coverInputRef}
+                ref={iconInputRef}
                 type="file"
                 accept="image/*"
                 className="form-image-upload-input"
-                aria-label="Choose cover image"
+                aria-label="Choose icon image"
                 onChange={(event) =>
-                  setCoverFile(event.target.files?.[0] ?? undefined)
+                  setIconFile(event.target.files?.[0] ?? undefined)
                 }
               />
               <div className="form-image-upload-row">
                 <button
                   type="button"
                   className="upload-button form-image-upload-button"
-                  onClick={() => coverInputRef.current?.click()}
+                  onClick={() => iconInputRef.current?.click()}
                 >
-                  {coverFile
-                    ? coverFile.name
-                    : playlist.imageId
-                      ? "Change image"
-                      : "Choose image"}
+                  {iconFile
+                    ? iconFile.name
+                    : folder.iconImageId
+                      ? "Change icon"
+                      : "Choose icon"}
                 </button>
-                {hasCover && (
+                {hasIcon && (
                   <button
                     type="button"
                     className="secondary-button"
-                    onClick={handleRemoveCover}
+                    onClick={handleRemoveIcon}
                   >
                     Remove
                   </button>
@@ -191,7 +185,7 @@ export const EditPlaylistModal = ({
             <div className="form-image-upload">
               <span className="form-image-upload-label">Banner image</span>
               <p className="settings-description">
-                Shown in the sidebar next to this playlist.
+                Shown in the sidebar next to this folder.
               </p>
               <input
                 ref={bannerInputRef}
@@ -211,9 +205,9 @@ export const EditPlaylistModal = ({
                 >
                   {bannerFile
                     ? bannerFile.name
-                    : playlist.bannerImageId
+                    : folder.bannerImageId
                       ? "Change banner"
-                      : "Choose image"}
+                      : "Choose banner"}
                 </button>
                 {hasBanner && (
                   <button
@@ -226,16 +220,6 @@ export const EditPlaylistModal = ({
                 )}
               </div>
             </div>
-          </section>
-
-          <section className="settings-section">
-            <h4 className="settings-section-title">Organization</h4>
-            {folders.length > 0 && (
-              <label>
-                Folder
-                <FolderSelect value={folderId} onChange={setFolderId} />
-              </label>
-            )}
           </section>
 
           <section className="settings-section">
@@ -278,13 +262,13 @@ export const EditPlaylistModal = ({
                 <div className="settings-row settings-row-readonly">
                   <span className="settings-row-label">Created</span>
                   <span className="settings-row-value">
-                    {formatDate(playlist.createdAt)}
+                    {formatDate(folder.createdAt)}
                   </span>
                 </div>
                 <div className="settings-row settings-row-readonly">
                   <span className="settings-row-label">Updated</span>
                   <span className="settings-row-value">
-                    {formatDate(playlist.updatedAt)}
+                    {formatDate(folder.updatedAt)}
                   </span>
                 </div>
               </div>
@@ -302,8 +286,8 @@ export const EditPlaylistModal = ({
             onClick={handleDelete}
           >
             {confirmDelete
-              ? "Click again to delete playlist"
-              : "Delete playlist"}
+              ? "Click again to delete folder"
+              : "Delete folder"}
           </button>
         </div>
       </form>

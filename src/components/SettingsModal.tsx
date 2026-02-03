@@ -7,6 +7,7 @@ import { usePlaylistStore } from "../stores/playlistStore";
 import { usePlayerStore } from "../stores/playerStore";
 import { trackDb, playlistDb, imageDb, playHistoryDb, themeDb } from "../db/db";
 import { Modal } from "./Modal";
+import { ColorPicker } from "./ColorPicker";
 
 const OLED_UNLOCK_KEY = "oled-mode-unlocked";
 const OLED_UNLOCK_TAPS = 10;
@@ -28,7 +29,10 @@ type SettingsModalProps = {
 export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
   const navigate = useNavigate();
   const mode = useThemeStore((state) => state.mode);
+  const accent = useThemeStore((state) => state.accent);
   const setMode = useThemeStore((state) => state.setMode);
+  const setAccent = useThemeStore((state) => state.setAccent);
+  const resetTheme = useThemeStore((state) => state.resetTheme);
   const clearPlayHistory = usePlayHistoryStore((state) => state.clearPlayHistory);
   const [confirmClearHistory, setConfirmClearHistory] = useState(false);
   const [confirmDeleteAllData, setConfirmDeleteAllData] = useState(false);
@@ -93,7 +97,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
     await useLibraryStore.getState().hydrate();
     await usePlaylistStore.getState().hydrate();
     await usePlayHistoryStore.getState().hydrate();
-    useThemeStore.getState().setMode("dark");
+    useThemeStore.getState().resetTheme();
     usePlayerStore.getState().clearQueue();
     setConfirmDeleteAllData(false);
     onClose();
@@ -165,6 +169,14 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                 </span>
               )}
             </div>
+          </div>
+          <div className="settings-row">
+            <span className="settings-row-label">Accent</span>
+            <ColorPicker
+              value={accent}
+              onChange={setAccent}
+              ariaLabel="Accent color"
+            />
           </div>
         </section>
 

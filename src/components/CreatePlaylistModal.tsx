@@ -1,7 +1,8 @@
 import { useState, useRef } from "react";
 import { usePlaylistStore } from "../stores/playlistStore";
+import { useFolderStore } from "../stores/folderStore";
 import { Modal } from "./Modal";
-import { ColorPicker } from "./ColorPicker";
+import { FolderSelect } from "./FolderSelect";
 
 type CreatePlaylistModalProps = {
   isOpen: boolean;
@@ -15,28 +16,36 @@ export const CreatePlaylistModal = ({
   onCreated,
 }: CreatePlaylistModalProps) => {
   const createPlaylist = usePlaylistStore((state) => state.createPlaylist);
+  const folders = useFolderStore((state) => state.folders);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [color, setColor] = useState("");
   const [imageFile, setImageFile] = useState<File | undefined>(undefined);
+  const [folderId, setFolderId] = useState<string>("");
+  const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     const trimmed = name.trim();
-    if (!trimmed || trimmed.length > 15) {
+    if (!trimmed) {
+      setError("Playlist name is required.");
+      return;
+    }
+    if (trimmed.length > 15) {
+      setError("Playlist name must be 15 characters or fewer.");
       return;
     }
     const playlist = await createPlaylist({
       name: trimmed,
       description: description.trim() || undefined,
       imageFile,
-      color: color || undefined,
+      folderId: folderId || undefined,
     });
     setName("");
     setDescription("");
-    setColor("");
     setImageFile(undefined);
+    setFolderId("");
+    setError(null);
     onCreated(playlist.id);
     onClose();
   };
@@ -48,25 +57,24 @@ export const CreatePlaylistModal = ({
           Playlist name
           <input
             value={name}
-            onChange={(event) => setName(event.target.value.slice(0, 15))}
+            onChange={(event) => {
+              setName(event.target.value.slice(0, 15));
+              if (error) {
+                setError(null);
+              }
+            }}
             placeholder="My Playlist"
             maxLength={15}
+            aria-invalid={error ? "true" : "false"}
           />
         </label>
+        {error && <p className="form-error">{error}</p>}
         <label>
           Description
           <input
             value={description}
             onChange={(event) => setDescription(event.target.value)}
             placeholder="Optional description"
-          />
-        </label>
-        <label className="form-color-label">
-          Color
-          <ColorPicker
-            value={color || "#1db954"}
-            onChange={setColor}
-            ariaLabel="Playlist color"
           />
         </label>
         <div className="form-image-upload">
@@ -89,6 +97,12 @@ export const CreatePlaylistModal = ({
             {imageFile ? imageFile.name : "Choose image"}
           </button>
         </div>
+        {folders.length > 0 && (
+          <label>
+            Folder
+            <FolderSelect value={folderId} onChange={setFolderId} />
+          </label>
+        )}
         <button className="primary-button" type="submit">
           Create playlist
         </button>

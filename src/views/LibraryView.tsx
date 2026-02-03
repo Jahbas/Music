@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useDragContext } from "../hooks/useDragContext";
 import { useLibraryStore } from "../stores/libraryStore";
 import { usePlaylistStore } from "../stores/playlistStore";
@@ -12,15 +12,30 @@ export const LibraryView = () => {
   const addFiles = useLibraryStore((state) => state.addFiles);
   const removeTrack = useLibraryStore((state) => state.removeTrack);
   const clearLibrary = useLibraryStore((state) => state.clearLibrary);
+  const toggleTrackLiked = useLibraryStore((state) => state.toggleTrackLiked);
   const removeTrackIdsFromAllPlaylists = usePlaylistStore(
     (state) => state.removeTrackIdsFromAllPlaylists
   );
+  const playlists = usePlaylistStore((state) => state.playlists);
   const playTrack = usePlayerStore((state) => state.playTrack);
   const setQueue = usePlayerStore((state) => state.setQueue);
   const clearQueue = usePlayerStore((state) => state.clearQueue);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isDraggingFiles, setIsDraggingFiles] = useState(false);
   const [isDeleteLibraryModalOpen, setIsDeleteLibraryModalOpen] = useState(false);
+
+  const playlistNamesByTrackId = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    for (const playlist of playlists) {
+      for (const trackId of playlist.trackIds) {
+        if (!map[trackId]) {
+          map[trackId] = [];
+        }
+        map[trackId].push(playlist.name);
+      }
+    }
+    return map;
+  }, [playlists]);
 
   const hasFileTypes = useCallback((dataTransfer: DataTransfer) => {
     return dataTransfer.types.includes("Files");
@@ -39,6 +54,14 @@ export const LibraryView = () => {
     setQueue(queue);
     playTrack(trackId, queue);
   };
+
+  const handleSelectAll = useCallback((trackIds: string[]) => {
+    setSelectedIds((prev) => {
+      const allSelected =
+        trackIds.length > 0 && trackIds.every((id) => prev.includes(id));
+      return allSelected ? [] : trackIds;
+    });
+  }, []);
 
   const handleDeleteSelected = useCallback(
     async (trackIds: string[]) => {
@@ -101,8 +124,10 @@ export const LibraryView = () => {
       </div>
       <TrackList
         tracks={tracks}
+        playlistNamesByTrackId={playlistNamesByTrackId}
         selectedIds={selectedIds}
         onToggleSelect={handleToggleSelect}
+        onSelectAll={handleSelectAll}
         onPlay={handlePlay}
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
@@ -112,6 +137,7 @@ export const LibraryView = () => {
             ? () => setIsDeleteLibraryModalOpen(true)
             : undefined
         }
+        onToggleLike={toggleTrackLiked}
       />
       <Modal
         title="Delete entire library?"
