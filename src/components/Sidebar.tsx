@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { usePlaylistStore } from "../stores/playlistStore";
 import { useLibraryStore } from "../stores/libraryStore";
-import { usePlayerStore } from "../stores/playerStore";
 import { CreatePlaylistModal } from "./CreatePlaylistModal";
 import { EditPlaylistModal } from "./EditPlaylistModal";
 import { useImageUrl } from "../hooks/useImageUrl";
@@ -24,7 +23,6 @@ type SidebarPlaylistRowProps = {
   playlist: Playlist;
   isDragOver: boolean;
   onNavigate: (path: string) => void;
-  onPlay: (playlist: Playlist) => void;
   onDragOver: (e: React.DragEvent, playlistId: string) => void;
   onDragLeave: (e: React.DragEvent, playlistId: string) => void;
   onDrop: (event: React.DragEvent<HTMLDivElement>, playlistId: string) => void;
@@ -35,7 +33,6 @@ function SidebarPlaylistRow({
   playlist,
   isDragOver,
   onNavigate,
-  onPlay,
   onDragOver,
   onDragLeave,
   onDrop,
@@ -43,7 +40,6 @@ function SidebarPlaylistRow({
 }: SidebarPlaylistRowProps) {
   const bannerUrl = useImageUrl(playlist.bannerImageId);
   const hasBanner = Boolean(playlist.bannerImageId);
-  const hasTracks = playlist.trackIds.length > 0;
   return (
     <div
       className={`sidebar-playlist ${isDragOver ? "sidebar-playlist--drag-over" : ""}`}
@@ -75,22 +71,6 @@ function SidebarPlaylistRow({
           ? `${playlist.name.slice(0, 24)}…`
           : playlist.name}
       </span>
-      {hasTracks && (
-        <button
-          className="sidebar-playlist-play ghost-button"
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation();
-            onPlay(playlist);
-          }}
-          title="Play playlist"
-          aria-label={`Play ${playlist.name}`}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-            <path d="M8 5v14l11-7L8 5z" />
-          </svg>
-        </button>
-      )}
       <button
         className="playlist-settings"
         type="button"
@@ -128,7 +108,6 @@ type SidebarProps = {
 export const Sidebar = ({ dragContext, onNavigate }: SidebarProps) => {
   const addFiles = useLibraryStore((state) => state.addFiles);
   const playlists = usePlaylistStore((state) => state.playlists);
-  const playTrackIds = usePlayerStore((state) => state.playTrackIds);
   const sortedPlaylists = useMemo(() => sortPlaylists(playlists), [playlists]);
   const addTracksToPlaylist = usePlaylistStore(
     (state) => state.addTracksToPlaylist
@@ -136,11 +115,6 @@ export const Sidebar = ({ dragContext, onNavigate }: SidebarProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPlaylist, setEditingPlaylist] = useState<Playlist | null>(null);
   const [dragOverPlaylistId, setDragOverPlaylistId] = useState<string | null>(null);
-
-  const handlePlayPlaylist = (playlist: Playlist) => {
-    if (playlist.trackIds.length === 0) return;
-    playTrackIds(playlist.trackIds);
-  };
 
   const handlePlaylistDragOver = (event: React.DragEvent, playlistId: string) => {
     const hasTracks = event.dataTransfer.types.includes("application/x-track-ids");
@@ -205,7 +179,6 @@ export const Sidebar = ({ dragContext, onNavigate }: SidebarProps) => {
               playlist={playlist}
               isDragOver={dragOverPlaylistId === playlist.id}
               onNavigate={onNavigate}
-              onPlay={handlePlayPlaylist}
               onDragOver={handlePlaylistDragOver}
               onDragLeave={handlePlaylistDragLeave}
               onDrop={handleDrop}

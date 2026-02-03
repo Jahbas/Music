@@ -32,7 +32,7 @@ interface SpotifyDb extends DBSchema {
 const DB_NAME = "spotify-like-player";
 const DB_VERSION = 2;
 
-export const dbPromise = openDB<SpotifyDb>(DB_NAME, DB_VERSION, {
+const dbPromise = openDB<SpotifyDb>(DB_NAME, DB_VERSION, {
   upgrade(db, oldVersion) {
     if (!db.objectStoreNames.contains("tracks")) {
       db.createObjectStore("tracks", { keyPath: "id" });
