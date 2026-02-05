@@ -28,7 +28,7 @@ export async function getFilesFromDataTransfer(
     if (item.kind === "file") {
       const entry = item.webkitGetAsEntry?.();
       if (entry?.isDirectory) {
-        const handle = await item.getAsFileSystemHandle?.();
+        const handle = await (item as DataTransferItem & { getAsFileSystemHandle?(): Promise<FileSystemHandle | undefined> }).getAsFileSystemHandle?.();
         if (handle && "kind" in handle && handle.kind === "directory") {
           if (!folderName) {
             folderName = handle.name;

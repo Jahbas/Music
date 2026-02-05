@@ -9,9 +9,11 @@ import { useProfileStore } from "../stores/profileStore";
 import { useFolderStore } from "../stores/folderStore";
 import { useProfileLikesStore } from "../stores/profileLikesStore";
 import { useThemeStore } from "../stores/themeStore";
+import { useTelemetry } from "../hooks/useTelemetry";
 import { AddSongsProgress } from "./AddSongsProgress";
 import { DragAddToPlaylistOverlay } from "./DragAddToPlaylistOverlay";
 import { PlayerBar } from "./PlayerBar";
+import { QueuePanel } from "./QueuePanel";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 
@@ -25,8 +27,10 @@ export const Layout = () => {
   const hydratePlayHistory = usePlayHistoryStore((state) => state.hydrate);
   const hydrateProfileLikes = useProfileLikesStore((state) => state.hydrate);
   useAudio();
+  useTelemetry();
 
   const [draggingTrackIds, setDraggingTrackIds] = useState<string[]>([]);
+  const [queuePanelOpen, setQueuePanelOpen] = useState(false);
 
   useEffect(() => {
     void hydrateTheme();
@@ -101,6 +105,7 @@ export const Layout = () => {
       className="app-shell"
       onDragOver={handleAppDragOver}
       onDrop={handleAppDrop}
+      onContextMenu={(e) => e.preventDefault()}
     >
       <Sidebar
         dragContext={dragContext}
@@ -112,7 +117,13 @@ export const Layout = () => {
           <Outlet context={dragContext} />
         </div>
       </div>
-      <PlayerBar />
+      <PlayerBar
+        queuePanelOpen={queuePanelOpen}
+        onToggleQueuePanel={() => setQueuePanelOpen((v) => !v)}
+      />
+      {queuePanelOpen && (
+        <QueuePanel onClose={() => setQueuePanelOpen(false)} />
+      )}
       <AddSongsProgress />
       {dragActive && (
         <DragAddToPlaylistOverlay

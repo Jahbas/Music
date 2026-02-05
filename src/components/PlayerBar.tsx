@@ -3,6 +3,7 @@ import { useImageUrl } from "../hooks/useImageUrl";
 import { useLibraryStore } from "../stores/libraryStore";
 import { usePlayerStore } from "../stores/playerStore";
 import { useProfileLikesStore } from "../stores/profileLikesStore";
+import { QueuePanel } from "./QueuePanel";
 
 const formatTime = (value: number) => {
   const total = Math.floor(value);
@@ -11,18 +12,31 @@ const formatTime = (value: number) => {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 };
 
-export const PlayerBar = () => {
+type PlayerBarProps = {
+  queuePanelOpen: boolean;
+  onToggleQueuePanel: () => void;
+};
+
+export const PlayerBar = ({
+  queuePanelOpen,
+  onToggleQueuePanel,
+}: PlayerBarProps) => {
   const progressTrackRef = useRef<HTMLDivElement>(null);
   const previousVolumeRef = useRef<number>(0.8);
   const [isDraggingProgress, setIsDraggingProgress] = useState(false);
   const [dragTime, setDragTime] = useState(0);
   const [isSpeedMenuOpen, setIsSpeedMenuOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isOverlayLeaving, setIsOverlayLeaving] = useState(false);
+  const [isOverlayEntered, setIsOverlayEntered] = useState(false);
   const playbackSpeedRef = useRef<HTMLDivElement | null>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
 
   const tracks = useLibraryStore((state) => state.tracks);
   const toggleTrackLiked = useLibraryStore((state) => state.toggleTrackLiked);
   const {
     currentTrackId,
+    queue,
     isPlaying,
     currentTime,
     duration,
@@ -38,6 +52,7 @@ export const PlayerBar = () => {
     setVolume,
     setCurrentTime,
   } = usePlayerStore();
+  const queueCount = queue.length;
 
   const currentTrack = useMemo(
     () => tracks.find((track) => track.id === currentTrackId),
@@ -66,7 +81,7 @@ export const PlayerBar = () => {
 
   const handleProgressClick = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
-      const el = progressTrackRef.current;
+      const el = event.currentTarget;
       if (!el || duration <= 0) return;
       const rect = el.getBoundingClientRect();
       const x = event.clientX - rect.left;
@@ -142,8 +157,294 @@ export const PlayerBar = () => {
     };
   }, [isSpeedMenuOpen]);
 
+  useEffect(() => {
+    if (!isExpanded) {
+      setIsOverlayEntered(false);
+      return;
+    }
+    const id = requestAnimationFrame(() => {
+      requestAnimationFrame(() => setIsOverlayEntered(true));
+    });
+    return () => cancelAnimationFrame(id);
+  }, [isExpanded]);
+
+  const handleExpand = useCallback(() => {
+    setIsOverlayLeaving(false);
+    setIsExpanded(true);
+  }, []);
+
+  const handleCollapse = useCallback(() => {
+    setIsOverlayEntered(false);
+    setIsOverlayLeaving(true);
+  }, []);
+
+  const handleOverlayTransitionEnd = useCallback(
+    (e: React.TransitionEvent) => {
+      if (e.target !== overlayRef.current || e.propertyName !== "opacity") return;
+      if (isOverlayLeaving) {
+        setIsExpanded(false);
+        setIsOverlayLeaving(false);
+      }
+    },
+    [isOverlayLeaving]
+  );
+
+  useEffect(() => {
+    if (!isExpanded && !isOverlayLeaving) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") handleCollapse();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isExpanded, isOverlayLeaving, handleCollapse]);
+
+  const showOverlay = isExpanded || isOverlayLeaving;
+
   return (
-    <div className="player-bar">
+    <>
+      {showOverlay && (
+        <div
+          ref={overlayRef}
+          className={`player-expanded-overlay ${isOverlayEntered && !isOverlayLeaving ? "player-expanded-overlay--open" : ""} ${isOverlayLeaving ? "player-expanded-overlay--leaving" : ""}`}
+          onTransitionEnd={handleOverlayTransitionEnd}
+          aria-modal="true"
+          role="dialog"
+          aria-label="Expanded player"
+        >
+          <div
+            className="player-expanded-backdrop"
+            onClick={handleCollapse}
+            aria-hidden
+          />
+          <div className="player-expanded-content">
+            <button
+              type="button"
+              className="ghost-button player-expanded-close"
+              onClick={handleCollapse}
+              title="Collapse player"
+              aria-label="Collapse player"
+            >
+              <FullscreenExitIcon />
+            </button>
+            <div className="player-expanded-player">
+              <div className="player-expanded-track">
+                {currentTrack && artworkUrl && (
+                  <div
+                    className="player-expanded-artwork"
+                    style={{ backgroundImage: `url(${artworkUrl})` }}
+                  />
+                )}
+                <div className="player-expanded-track-text">
+                  <div className="player-expanded-title">
+                    {currentTrack?.title ?? ""}
+                  </div>
+                  {currentTrack?.artist &&
+                    currentTrack.artist.trim().toLowerCase() !== "unknown artist" && (
+                      <div className="player-expanded-artist">
+                        {currentTrack.artist}
+                      </div>
+                    )}
+                </div>
+              </div>
+              <div className="player-expanded-controls">
+                <div className="control-row">
+                  <button
+                    type="button"
+                    className={`ghost-button player-shuffle ${shuffle ? "player-shuffle--on" : ""}`}
+                    onClick={toggleShuffle}
+                    title={shuffle ? "Shuffle on" : "Shuffle off"}
+                    aria-label={shuffle ? "Shuffle on" : "Shuffle off"}
+                    aria-pressed={shuffle}
+                  >
+                    <ShuffleIcon />
+                  </button>
+                  <button
+                    type="button"
+                    className={`ghost-button player-repeat ${repeat !== "off" ? "player-repeat--on" : ""}`}
+                    onClick={cycleRepeat}
+                    title={
+                      repeat === "off"
+                        ? "Repeat off"
+                        : repeat === "queue"
+                          ? "Repeat queue"
+                          : "Repeat track"
+                    }
+                    aria-label={
+                      repeat === "off"
+                        ? "Repeat off"
+                        : repeat === "queue"
+                          ? "Repeat queue"
+                          : "Repeat track"
+                    }
+                    aria-pressed={repeat !== "off"}
+                  >
+                    <RepeatIcon />
+                  </button>
+                  <button
+                    type="button"
+                    className="ghost-button player-previous"
+                    onClick={previous}
+                    title="Previous"
+                    aria-label="Previous track"
+                  >
+                    <PreviousIcon />
+                  </button>
+                  <button
+                    type="button"
+                    className="play-pause-button"
+                    onClick={togglePlay}
+                    title={isPlaying ? "Pause" : "Play"}
+                    aria-label={isPlaying ? "Pause" : "Play"}
+                  >
+                    {isPlaying ? <PauseIcon /> : <PlayIcon />}
+                  </button>
+                  <button
+                    type="button"
+                    className="ghost-button"
+                    onClick={next}
+                    title="Next"
+                    aria-label="Next track"
+                  >
+                    <NextIcon />
+                  </button>
+                  {currentTrack && (
+                    <button
+                      type="button"
+                      className={`player-like-button${currentTrackLiked ? " player-like-button--active" : ""}`}
+                      onClick={() => toggleTrackLiked(currentTrack.id)}
+                      title={
+                        currentTrackLiked
+                          ? "Remove from Liked Songs"
+                          : "Save to Liked Songs"
+                      }
+                      aria-label={
+                        currentTrackLiked
+                          ? "Remove from Liked Songs"
+                          : "Save to Liked Songs"
+                      }
+                    >
+                      <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill={currentTrackLiked ? "currentColor" : "none"}
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden
+                      >
+                        <path d="M20.8 4.6a5 5 0 0 0-7.1 0L12 6.3l-1.7-1.7a5 5 0 0 0-7.1 7.1l1.7 1.7L12 21l7.1-7.6 1.7-1.7a5 5 0 0 0 0-7.1z" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+                <div className="progress-row">
+                  <span className="progress-time">{formatTime(displayTime)}</span>
+                  <div
+                    ref={progressTrackRef}
+                    className="slider-wrap slider-progress"
+                    style={{ "--fill": `${progressPercent}%` } as React.CSSProperties}
+                    onClick={handleProgressClick}
+                    onMouseUp={handleProgressMouseUp}
+                    onMouseLeave={handleProgressPointerLeave}
+                  >
+                    <input
+                      type="range"
+                      className="slider-input"
+                      min={0}
+                      max={duration || 0}
+                      step={0.1}
+                      value={displayTime}
+                      onMouseDown={handleProgressMouseDown}
+                      onChange={handleProgressChange}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                  <span className="progress-time">{formatTime(duration)}</span>
+                </div>
+              </div>
+              <div className="player-expanded-volume">
+                <div className="playback-speed" ref={playbackSpeedRef}>
+                  <button
+                    type="button"
+                    className="playback-speed-button"
+                    onClick={handleToggleSpeedMenu}
+                    aria-haspopup="listbox"
+                    aria-expanded={isSpeedMenuOpen}
+                    title="Playback speed"
+                  >
+                    <span>{`${playbackRate.toFixed(2).replace(/\.00$/, "").replace(/0$/, "")}×`}</span>
+                    <span className="playback-speed-chevron" aria-hidden>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="6 9 12 15 18 9" />
+                      </svg>
+                    </span>
+                  </button>
+                  {isSpeedMenuOpen && (
+                    <div className="playback-speed-menu" role="listbox">
+                      {speedOptions.map((value) => (
+                        <button
+                          key={value}
+                          type="button"
+                          className={`playback-speed-option${playbackRate === value ? " playback-speed-option--active" : ""}`}
+                          onClick={() => handleSelectSpeed(value)}
+                          role="option"
+                          aria-selected={playbackRate === value}
+                        >
+                          {`${value}×`}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  className="volume-mute ghost-button"
+                  onClick={handleMuteClick}
+                  title={volume > 0 ? "Mute" : "Unmute"}
+                  aria-label={volume > 0 ? "Mute" : "Unmute"}
+                >
+                  {volume === 0 ? (
+                    <VolumeMutedIcon />
+                  ) : volume < 0.5 ? (
+                    <VolumeLowIcon />
+                  ) : (
+                    <VolumeHighIcon />
+                  )}
+                </button>
+                <div
+                  className="slider-wrap slider-volume"
+                  style={{ "--fill": `${volumePercent}%` } as React.CSSProperties}
+                >
+                  <input
+                    type="range"
+                    className="slider-input"
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    value={volume}
+                    onChange={(event) => setVolume(Number(event.target.value))}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="player-expanded-queue">
+              <QueuePanel onClose={handleCollapse} embedInOverlay />
+            </div>
+          </div>
+        </div>
+      )}
+      <div className={`player-bar${showOverlay ? " player-bar--maximized-hidden" : ""}`}>
+        <button
+          type="button"
+          className="ghost-button player-fullscreen-button"
+          onClick={handleExpand}
+          title="Expand player"
+          aria-label="Expand player"
+        >
+          <FullscreenIcon />
+        </button>
       <div className="player-track">
         {currentTrack && artworkUrl && (
           <div
@@ -286,6 +587,16 @@ export const PlayerBar = () => {
         </div>
       </div>
       <div className="player-volume">
+        <button
+          type="button"
+          className="player-queue-button"
+          onClick={onToggleQueuePanel}
+          aria-pressed={queuePanelOpen}
+          aria-label={queuePanelOpen ? "Close queue" : "Open queue"}
+          title={queuePanelOpen ? "Close queue" : `Queue (${queueCount} track${queueCount === 1 ? "" : "s"})`}
+        >
+          <QueueIcon />
+        </button>
         <div
           className="playback-speed"
           ref={playbackSpeedRef}
@@ -364,8 +675,44 @@ export const PlayerBar = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
+
+function FullscreenIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M8 3H5a2 2 0 0 0-2 2v3" />
+      <path d="M21 8V5a2 2 0 0 0-2-2h-3" />
+      <path d="M3 16v3a2 2 0 0 0 2 2h3" />
+      <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+    </svg>
+  );
+}
+
+function FullscreenExitIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M8 3v3a2 2 0 0 1-2 2H3" />
+      <path d="M21 8h-3a2 2 0 0 1-2-2V3" />
+      <path d="M3 16h3a2 2 0 0 1 2 2v3" />
+      <path d="M16 21v-3a2 2 0 0 1 2-2h3" />
+    </svg>
+  );
+}
+
+function QueueIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <line x1="8" y1="6" x2="21" y2="6" />
+      <line x1="8" y1="12" x2="21" y2="12" />
+      <line x1="8" y1="18" x2="21" y2="18" />
+      <line x1="3" y1="6" x2="3.01" y2="6" />
+      <line x1="3" y1="12" x2="3.01" y2="12" />
+      <line x1="3" y1="18" x2="3.01" y2="18" />
+    </svg>
+  );
+}
 
 function ShuffleIcon() {
   return (

@@ -132,6 +132,22 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
           <p className="settings-description">
             See your listening stats, top tracks and artists by year.
           </p>
+          <div className="settings-row">
+            <span className="settings-row-label">Session & usage telemetry</span>
+            <button
+              type="button"
+              className="secondary-button settings-row-action"
+              onClick={() => {
+                onClose();
+                navigate("/telemetry");
+              }}
+            >
+              Open
+            </button>
+          </div>
+          <p className="settings-description">
+            Visit count, session duration, listening time per session, pages visited, searches, skips, and more.
+          </p>
         </section>
 
         <section className="settings-section">

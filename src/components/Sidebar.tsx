@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { usePlaylistStore } from "../stores/playlistStore";
 import { useFolderStore } from "../stores/folderStore";
 import { useLibraryStore } from "../stores/libraryStore";
@@ -43,6 +44,7 @@ type SidebarPlaylistRowProps = {
   indent?: boolean;
   onDragStart?: (playlistId: string) => void;
   onDragEnd?: () => void;
+  onContextMenu?: (e: React.MouseEvent) => void;
 };
 
 function SidebarPlaylistRow({
@@ -53,6 +55,7 @@ function SidebarPlaylistRow({
   indent = false,
   onDragStart,
   onDragEnd,
+  onContextMenu,
 }: Omit<SidebarPlaylistRowProps, "onDragOver" | "onDragLeave" | "onDrop">) {
   const bannerUrl = useImageUrl(playlist.bannerImageId);
   const hasBanner = Boolean(playlist.bannerImageId);
@@ -67,6 +70,16 @@ function SidebarPlaylistRow({
     onDragEnd?.();
   };
 
+  const handleDragOverForTracks = (e: React.DragEvent) => {
+    if (
+      e.dataTransfer.types.includes("application/x-track-ids") ||
+      e.dataTransfer.types.includes("Files")
+    ) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "copy";
+    }
+  };
+
   return (
     <div
       className={`sidebar-playlist ${isDragOver ? "sidebar-playlist--drag-over" : ""} ${indent ? "sidebar-playlist--indent" : ""}`}
@@ -74,7 +87,13 @@ function SidebarPlaylistRow({
       draggable
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
+      onDragOver={handleDragOverForTracks}
       onClick={() => onNavigate(`/playlist/${playlist.id}`)}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onContextMenu?.(e);
+      }}
     >
       {hasBanner && bannerUrl && (
         <div
@@ -131,6 +150,8 @@ type SidebarFolderRowProps = {
   onPlaylistEdit: (playlist: Playlist) => void;
   dragOverPlaylistId: string | null;
   onPlaylistDrop?: (playlistId: string, folderId: string) => void;
+  onFolderContextMenu?: (folder: PlaylistFolder, e: React.MouseEvent) => void;
+  onPlaylistContextMenu?: (playlist: Playlist, e: React.MouseEvent) => void;
 };
 
 function SidebarFolderRow({
@@ -144,6 +165,8 @@ function SidebarFolderRow({
   onPlaylistEdit,
   dragOverPlaylistId,
   onPlaylistDrop,
+  onFolderContextMenu,
+  onPlaylistContextMenu,
 }: SidebarFolderRowProps) {
   const iconUrl = useImageUrl(folder.iconImageId);
   const bannerUrl = useImageUrl(folder.bannerImageId);
@@ -183,6 +206,11 @@ function SidebarFolderRow({
         onClick={() => onNavigate(`/folder/${folder.id}`)}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onFolderContextMenu?.(folder, e);
+        }}
       >
         {hasBanner && bannerUrl && (
           <div
@@ -268,6 +296,7 @@ function SidebarFolderRow({
               onNavigate={onNavigate}
               onEdit={onPlaylistEdit}
               indent
+              onContextMenu={(e) => onPlaylistContextMenu?.(playlist, e)}
             />
           ))}
         </div>
@@ -298,10 +327,44 @@ export const Sidebar = ({ dragContext, onNavigate }: SidebarProps) => {
   const [dragOverPlaylistId, setDragOverPlaylistId] = useState<string | null>(null);
   const [dragOverFolderId, setDragOverFolderId] = useState<string | null>(null);
   const [dragOverSection, setDragOverSection] = useState(false);
-  const [draggingPlaylistId, setDraggingPlaylistId] = useState<string | null>(null);
+  const [_draggingPlaylistId, setDraggingPlaylistId] = useState<string | null>(null);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [foldersCollapsed, setFoldersCollapsed] = useState(false);
   const [playlistsCollapsed, setPlaylistsCollapsed] = useState(false);
+  const [playlistsContextMenu, setPlaylistsContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const [foldersContextMenu, setFoldersContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const [playlistRowContextMenu, setPlaylistRowContextMenu] = useState<{ x: number; y: number; playlist: Playlist | null } | null>(null);
+  const [folderRowContextMenu, setFolderRowContextMenu] = useState<{ x: number; y: number; folder: PlaylistFolder } | null>(null);
+  const contextMenuRef = useRef<HTMLDivElement>(null);
+
+  const isAnyContextMenuOpen =
+    playlistsContextMenu || foldersContextMenu || playlistRowContextMenu || folderRowContextMenu;
+
+  useEffect(() => {
+    if (!isAnyContextMenuOpen) return;
+    const closeAll = () => {
+      setPlaylistsContextMenu(null);
+      setFoldersContextMenu(null);
+      setPlaylistRowContextMenu(null);
+      setFolderRowContextMenu(null);
+    };
+    const handleClick = (e: MouseEvent) => {
+      if (contextMenuRef.current?.contains(e.target as Node)) return;
+      closeAll();
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeAll();
+    };
+    const handleScroll = () => closeAll();
+    document.addEventListener("mousedown", handleClick, true);
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("scroll", handleScroll, true);
+    return () => {
+      document.removeEventListener("mousedown", handleClick, true);
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("scroll", handleScroll, true);
+    };
+  }, [isAnyContextMenuOpen]);
 
   const sortedFolders = useMemo(() => sortFolders(folders), [folders]);
   const playlistsWithoutFolder = useMemo(
@@ -328,7 +391,7 @@ export const Sidebar = ({ dragContext, onNavigate }: SidebarProps) => {
     const hasTracks = types.includes("application/x-track-ids");
     const hasPlaylist = types.includes("application/x-playlist-id");
     const hasFiles = types.includes("Files") || (event.dataTransfer.items?.length ?? 0) > 0;
-    event.dataTransfer.dropEffect = hasFiles ? "copy" : "move";
+    event.dataTransfer.dropEffect = (hasFiles || hasTracks) ? "copy" : "move";
     const playlistRow = (event.target as HTMLElement).closest?.(".sidebar-playlist");
     const folderRow = (event.target as HTMLElement).closest?.(".sidebar-folder-header");
     const playlistId = playlistRow?.getAttribute("data-playlist-id");
@@ -472,6 +535,11 @@ export const Sidebar = ({ dragContext, onNavigate }: SidebarProps) => {
       </div>
       <div
         className={`sidebar-section ${dragOverSection ? "sidebar-section--drag-over" : ""}`}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setFoldersContextMenu({ x: e.clientX, y: e.clientY });
+        }}
       >
         <button
           type="button"
@@ -513,13 +581,28 @@ export const Sidebar = ({ dragContext, onNavigate }: SidebarProps) => {
                 onPlaylistEdit={setEditingPlaylist}
                 dragOverPlaylistId={dragOverPlaylistId}
                 onPlaylistDrop={handlePlaylistDrop}
+                onFolderContextMenu={(f, e) =>
+                  setFolderRowContextMenu({ x: e.clientX, y: e.clientY, folder: f })
+                }
+                onPlaylistContextMenu={(playlist, e) =>
+                  setPlaylistRowContextMenu({
+                    x: e.clientX,
+                    y: e.clientY,
+                    playlist,
+                  })
+                }
               />
             ))}
           </div>
         )}
       </div>
       <div
-        className={`sidebar-section ${dragOverSection ? "sidebar-section--drag-over" : ""}`}
+        className={`sidebar-section sidebar-section--fill ${dragOverSection ? "sidebar-section--drag-over" : ""}`}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setPlaylistsContextMenu({ x: e.clientX, y: e.clientY });
+        }}
       >
         <button
           type="button"
@@ -548,7 +631,15 @@ export const Sidebar = ({ dragContext, onNavigate }: SidebarProps) => {
         </button>
         {!playlistsCollapsed && (
           <div className="sidebar-playlists">
-            <div className="sidebar-playlist" onClick={() => onNavigate("/liked")}>
+            <div
+              className="sidebar-playlist"
+              onClick={() => onNavigate("/liked")}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setPlaylistRowContextMenu({ x: e.clientX, y: e.clientY, playlist: null });
+              }}
+            >
               <span className="playlist-name" title="Liked Songs">
                 Liked Songs
               </span>
@@ -562,11 +653,136 @@ export const Sidebar = ({ dragContext, onNavigate }: SidebarProps) => {
                 onEdit={setEditingPlaylist}
                 onDragStart={setDraggingPlaylistId}
                 onDragEnd={() => setDraggingPlaylistId(null)}
+                onContextMenu={(e) =>
+                  setPlaylistRowContextMenu({
+                    x: e.clientX,
+                    y: e.clientY,
+                    playlist,
+                  })
+                }
               />
             ))}
           </div>
         )}
       </div>
+      {playlistsContextMenu &&
+        createPortal(
+          <div
+            ref={contextMenuRef}
+            className="track-list-context-menu"
+            style={{ left: playlistsContextMenu.x, top: playlistsContextMenu.y }}
+            role="menu"
+          >
+            <button
+              type="button"
+              className="dropdown-item"
+              role="menuitem"
+              onClick={() => {
+                setPlaylistsContextMenu(null);
+                setIsPlaylistModalOpen(true);
+              }}
+            >
+              Create playlist
+            </button>
+          </div>,
+          document.body
+        )}
+      {foldersContextMenu &&
+        createPortal(
+          <div
+            ref={contextMenuRef}
+            className="track-list-context-menu"
+            style={{ left: foldersContextMenu.x, top: foldersContextMenu.y }}
+            role="menu"
+          >
+            <button
+              type="button"
+              className="dropdown-item"
+              role="menuitem"
+              onClick={() => {
+                setFoldersContextMenu(null);
+                setIsFolderModalOpen(true);
+              }}
+            >
+              Create folder
+            </button>
+          </div>,
+          document.body
+        )}
+      {playlistRowContextMenu &&
+        createPortal(
+          <div
+            ref={contextMenuRef}
+            className="track-list-context-menu"
+            style={{
+              left: playlistRowContextMenu.x,
+              top: playlistRowContextMenu.y,
+            }}
+            role="menu"
+          >
+            {playlistRowContextMenu.playlist && (
+              <button
+                type="button"
+                className="dropdown-item"
+                role="menuitem"
+                onClick={() => {
+                  setPlaylistRowContextMenu(null);
+                  setEditingPlaylist(playlistRowContextMenu.playlist);
+                }}
+              >
+                Edit playlist
+              </button>
+            )}
+            <button
+              type="button"
+              className="dropdown-item"
+              role="menuitem"
+              onClick={() => {
+                setPlaylistRowContextMenu(null);
+                setIsPlaylistModalOpen(true);
+              }}
+            >
+              Create playlist
+            </button>
+          </div>,
+          document.body
+        )}
+      {folderRowContextMenu &&
+        createPortal(
+          <div
+            ref={contextMenuRef}
+            className="track-list-context-menu"
+            style={{
+              left: folderRowContextMenu.x,
+              top: folderRowContextMenu.y,
+            }}
+            role="menu"
+          >
+            <button
+              type="button"
+              className="dropdown-item"
+              role="menuitem"
+              onClick={() => {
+                setFolderRowContextMenu(null);
+                setEditingFolder(folderRowContextMenu.folder);
+              }}
+            >
+              Edit folder
+            </button>
+            <button
+              type="button"
+              className="dropdown-item"
+              role="menuitem"
+              onClick={() => {
+                setFolderRowContextMenu(null);
+                setIsFolderModalOpen(true);
+              }}
+            >
+              Create folder
+            </button>
+          </div>,
+          document.body
+        )}
       <CreatePlaylistModal
         isOpen={isPlaylistModalOpen}
         onClose={() => setIsPlaylistModalOpen(false)}

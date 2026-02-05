@@ -1,5 +1,7 @@
 import { useMemo, useState, useCallback, useRef, useLayoutEffect, useEffect } from "react";
 import type { Track } from "../types";
+import { usePlayerStore } from "../stores/playerStore";
+import { usePlaylistStore } from "../stores/playlistStore";
 
 type SortKey = "title" | "album" | "dateAdded" | "duration" | "liked";
 type SortDir = "asc" | "desc";
@@ -29,6 +31,32 @@ const formatDuration = (seconds: number) => {
   const secs = totalSecs % 60;
   return `${minutes}:${secs.toString().padStart(2, "0")}`;
 };
+
+function setTrackDragImage(dataTransfer: DataTransfer, count: number) {
+  const label = count === 1 ? "1 song" : `${count} songs`;
+  const el = document.createElement("div");
+  el.textContent = label;
+  el.setAttribute("aria-hidden", "true");
+  Object.assign(el.style, {
+    position: "fixed",
+    top: "-1000px",
+    left: "0",
+    padding: "8px 12px",
+    borderRadius: "8px",
+    background: "var(--color-elevated)",
+    color: "var(--color-text)",
+    fontSize: "13px",
+    fontWeight: "500",
+    fontFamily: "var(--font-apple), sans-serif",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+    border: "1px solid var(--color-border)",
+    pointerEvents: "none",
+    whiteSpace: "nowrap",
+  });
+  document.body.appendChild(el);
+  dataTransfer.setDragImage(el, 0, 0);
+  setTimeout(() => el.remove(), 0);
+}
 
 function sortTracks(
   tracks: Track[],
@@ -82,6 +110,21 @@ export const TrackList = ({
 }: TrackListProps) => {
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const [sortState, setSortState] = useState<{ key: SortKey; dir: SortDir } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    trackIds: string[];
+    primaryTrackId: string;
+  } | null>(null);
+  const contextMenuRef = useRef<HTMLDivElement>(null);
+  const [contextMenuPlaylistOpen, setContextMenuPlaylistOpen] = useState(false);
+  const queue = usePlayerStore((state) => state.queue);
+  const addToQueue = usePlayerStore((state) => state.addToQueue);
+  const removeFromQueue = usePlayerStore((state) => state.removeFromQueue);
+  const playlists = usePlaylistStore((state) => state.playlists);
+  const addTracksToPlaylist = usePlaylistStore(
+    (state) => state.addTracksToPlaylist
+  );
   const trackTableRef = useRef<HTMLDivElement>(null);
   const previousPositionsRef = useRef<Map<string, { top: number; left: number }>>(new Map());
   const flipPendingRef = useRef(false);
@@ -100,6 +143,29 @@ export const TrackList = ({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onDeleteSelected, selectedIds]);
+
+  useEffect(() => {
+    if (!contextMenu) return;
+    const handleClick = (e: MouseEvent) => {
+      if (contextMenuRef.current?.contains(e.target as Node)) return;
+      setContextMenu(null);
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setContextMenu(null);
+    };
+    const handleScroll = () => setContextMenu(null);
+    const scrollContainer = document.querySelector(".app-content");
+    window.addEventListener("mousedown", handleClick);
+    window.addEventListener("keydown", handleKeyDown);
+    scrollContainer?.addEventListener("scroll", handleScroll, { capture: true });
+    return () => {
+      window.removeEventListener("mousedown", handleClick);
+      window.removeEventListener("keydown", handleKeyDown);
+      scrollContainer?.removeEventListener("scroll", handleScroll, {
+        capture: true,
+      });
+    };
+  }, [contextMenu]);
 
   const handleSort = useCallback((key: SortKey) => {
     const table = trackTableRef.current;
@@ -215,8 +281,124 @@ export const TrackList = ({
     };
   }, [highlightTrackId]);
 
+  const handleContextMenuAction = useCallback(
+    (fn: () => void) => {
+      fn();
+      setContextMenu(null);
+    },
+    []
+  );
+
   return (
     <div className="track-list">
+      {contextMenu && (
+        <div
+          ref={contextMenuRef}
+          className="track-list-context-menu"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+          role="menu"
+        >
+          <button
+            type="button"
+            className="dropdown-item"
+            role="menuitem"
+            onClick={() =>
+              handleContextMenuAction(() => onPlay(contextMenu.primaryTrackId))
+            }
+          >
+            Play
+          </button>
+          <button
+            type="button"
+            className="dropdown-item"
+            role="menuitem"
+            onClick={() =>
+              handleContextMenuAction(() =>
+                addToQueue(contextMenu.trackIds, "next")
+              )
+            }
+          >
+            Play next
+          </button>
+          <button
+            type="button"
+            className="dropdown-item"
+            role="menuitem"
+            onClick={() =>
+              handleContextMenuAction(() =>
+                addToQueue(contextMenu.trackIds, "end")
+              )
+            }
+          >
+            Add to queue
+          </button>
+          {onToggleLike && (
+            <button
+              type="button"
+              className="dropdown-item"
+              role="menuitem"
+              onClick={() =>
+                handleContextMenuAction(() => {
+                  contextMenu.trackIds.forEach((id) => onToggleLike(id));
+                })
+              }
+            >
+              {likedTrackIds?.includes(contextMenu.primaryTrackId)
+                ? "Remove from Liked Songs"
+                : "Save to Liked Songs"}
+            </button>
+          )}
+          {playlists.length > 0 && (
+            <div className="track-list-context-menu-submenu-wrap">
+              <button
+                type="button"
+                className="dropdown-item dropdown-item--submenu-trigger"
+                role="menuitem"
+                aria-expanded={contextMenuPlaylistOpen}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setContextMenuPlaylistOpen((prev) => !prev);
+                }}
+              >
+                Add to playlist
+              </button>
+              {contextMenuPlaylistOpen && (
+                <div className="track-list-context-menu track-list-context-menu--submenu">
+                  {playlists.map((playlist) => (
+                    <button
+                      key={playlist.id}
+                      type="button"
+                      className="dropdown-item"
+                      role="menuitem"
+                      onClick={() =>
+                        handleContextMenuAction(() =>
+                          addTracksToPlaylist(playlist.id, contextMenu.trackIds)
+                        )
+                      }
+                    >
+                      {playlist.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          {contextMenu.trackIds.some((id) => queue.includes(id)) && (
+            <button
+              type="button"
+              className="dropdown-item"
+              role="menuitem"
+              onClick={() =>
+                handleContextMenuAction(() => {
+                  contextMenu.trackIds.forEach((id) => removeFromQueue(id));
+                })
+              }
+            >
+              Remove from queue
+            </button>
+          )}
+        </div>
+      )}
       <div className="track-list-header">
         {title && <h2>{title}</h2>}
         <div className="track-list-header-actions">
@@ -250,7 +432,16 @@ export const TrackList = ({
           )}
         </div>
       </div>
-      <div className="track-table" ref={trackTableRef}>
+      <div
+        className="track-table"
+        ref={trackTableRef}
+        onDragOver={(e) => {
+          if (e.dataTransfer.types.includes("application/x-track-ids")) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "copy";
+          }
+        }}
+      >
         <div className="track-row track-head">
           <div className="track-row-col-index">
             {onSelectAll ? (
@@ -399,6 +590,17 @@ export const TrackList = ({
                   onPlay(track.id);
                 }
               }}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                const trackIds = isSelected ? selectedIds : [track.id];
+                setContextMenuPlaylistOpen(false);
+                setContextMenu({
+                  x: e.clientX,
+                  y: e.clientY,
+                  trackIds,
+                  primaryTrackId: track.id,
+                });
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
@@ -409,14 +611,26 @@ export const TrackList = ({
                   }
                 }
               }}
+              onDragOver={(e) => {
+                if (e.dataTransfer.types.includes("application/x-track-ids")) {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "copy";
+                }
+              }}
               onDragStart={(event) => {
                 const dragIds = isSelected
                   ? selectedIds
                   : [track.id];
+                event.dataTransfer.effectAllowed = "copy";
                 event.dataTransfer.setData(
                   "application/x-track-ids",
                   JSON.stringify(dragIds)
                 );
+                event.dataTransfer.setData(
+                  "text/plain",
+                  dragIds.length === 1 ? "1 song" : `${dragIds.length} songs`
+                );
+                setTrackDragImage(event.dataTransfer, dragIds.length);
                 onDragStart(dragIds);
               }}
               onDragEnd={() => onDragEnd()}

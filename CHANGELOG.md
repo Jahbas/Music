@@ -1,3 +1,22 @@
+## 1.3.0 - 2026-02-05
+
+### New
+
+- **Queue panel**: Open the queue from the player bar (queue icon) to see “Now playing” and “Next in queue.” Reorder upcoming tracks by drag-and-drop, remove individual items, or clear the queue. Drag tracks from any view (library, playlist, folder, liked, search) into the queue panel to add them to the end.
+- **Session & usage telemetry**: Local-only analytics you can view under Settings → “Session & usage telemetry” (or `/telemetry`). Records per visit and per session: total visits and sessions, session duration, listening time (time spent with playback active), pages visited (path history), search queries, track play count, skip next/prev counts, and play/pause toggles. Sessions end when you close the tab or switch away. Shows aggregates: total listening time and total time on app (all sessions), averages per session, most visited pages, and recent search queries. Recent sessions are listed in a table. Data is stored only in your browser (localStorage); you can export a JSON snapshot to clipboard. No data is sent anywhere.
+
+### Improvements
+
+- **Drag add to playlist**: When dragging one or more tracks, an overlay appears listing your playlists; drop on a playlist to add the tracks.
+- **Sidebar file/folder drop**: Drop audio files on the sidebar to add them to the library; drop on a playlist row to add to that playlist. Drop a folder on the sidebar to create a new playlist named after the folder, import all audio files from it, and navigate to that playlist.
+
+### Internal
+
+- **Queue**: Player store exposes `addToQueue`, `removeFromQueue`, `reorderQueue`, `clearQueue`; queue order and current track drive the queue panel and playback.
+- **Telemetry**: New `telemetryStore` (localStorage) and `useTelemetry` hook; records visits, sessions (start/end on visibility change and pagehide), routes, search, and player actions; `TelemetryView` at `/telemetry` and snapshot export.
+
+---
+
 ## 1.2.0 - 2026-02-05
 
 ### New
