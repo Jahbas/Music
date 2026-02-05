@@ -9,9 +9,9 @@ Import local files, organize them into playlists and folders, and enjoy a clean,
 |-----------|-------------|-------------------|
 | ![Main view](img/darkmode/main.preview.png) | ![Queue panel](img/darkmode/queue.preview.png) | ![Fullscreen player](img/darkmode/fullscreen.preview.png) |
 
-| Wrapped (play history) | Session & usage telemetry |
-|------------------------|---------------------------|
-| ![Wrapped](img/darkmode/wrapped.preview.png) | ![Telemetry](img/darkmode/telemetry.preview.png) |
+| Wrapped (play history) | Session & usage telemetry | Search |
+|------------------------|---------------------------|--------|
+| ![Wrapped](img/darkmode/wrapped.preview.png) | ![Telemetry](img/darkmode/telemetry.preview.png) | ![Search](img/darkmode/search.preview.png) |
 
 <details>
 <summary><strong>Light mode</strong></summary>
