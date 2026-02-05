@@ -7,11 +7,37 @@ Import local files, organize them into playlists and folders, and enjoy a clean,
 
 | Main view | Queue panel | Fullscreen player |
 |-----------|-------------|-------------------|
-| ![Main view](img/main.preview.png) | ![Queue panel](img/queue.preview.png) | ![Fullscreen player](img/fullscreen.preview.png) |
+| ![Main view](img/darkmode/main.preview.png) | ![Queue panel](img/darkmode/queue.preview.png) | ![Fullscreen player](img/darkmode/fullscreen.preview.png) |
 
 | Wrapped (play history) | Session & usage telemetry |
 |------------------------|---------------------------|
-| ![Wrapped](img/wrapped.preview.png) | ![Telemetry](img/telemetry.preview.png) |
+| ![Wrapped](img/darkmode/wrapped.preview.png) | ![Telemetry](img/darkmode/telemetry.preview.png) |
+
+<details>
+<summary><strong>Light mode</strong></summary>
+
+| Main view | Queue panel | Fullscreen player |
+|-----------|-------------|-------------------|
+| ![Main view](img/lightmode/main.preview.png) | ![Queue panel](img/lightmode/queue.preview.png) | ![Fullscreen player](img/lightmode/fullscreen.preview.png) |
+
+| Wrapped (play history) | Session & usage telemetry |
+|------------------------|---------------------------|
+| ![Wrapped](img/lightmode/wrapped.preview.png) | ![Telemetry](img/lightmode/telemetry.preview.png) |
+
+</details>
+
+<details>
+<summary><strong>OLED theme</strong></summary>
+
+| Main view | Queue panel | Fullscreen player |
+|-----------|-------------|-------------------|
+| ![Main view](img/oled/main.preview.png) | ![Queue panel](img/oled/queue.preview.png) | ![Fullscreen player](img/oled/fullscreen.preview.png) |
+
+| Wrapped (play history) | Session & usage telemetry |
+|------------------------|---------------------------|
+| ![Wrapped](img/oled/wrapped.preview.png) | ![Telemetry](img/oled/telemetry.preview.png) |
+
+</details>
 
 ### Highlights
 
