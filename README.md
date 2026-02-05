@@ -8,6 +8,8 @@ Import local files, organize them into playlists and folders, and enjoy a clean,
 - **Local-first library**: All tracks, playlists, folders, and artwork are stored in IndexedDB in your browser.
 - **Smart playlists**: Automatic **Liked Songs** view plus custom playlists with cover images.
 - **Playlist folders**: Group playlists into folders with icons and banners; play or shuffle an entire folder at once.
+- **Multiple profiles**: Switch between profiles in the top bar; each profile has its own folders so you can separate work, personal, or different libraries.
+- **Repeat and shuffle**: Infinite loop (repeat queue or repeat track) and shuffle with one tap; active states shown in the player bar.
 - **Beautiful themes**: Modern, glassy UI designed for long listening sessions.
 - **No account, no tracking**: Everything stays on your machine.
 

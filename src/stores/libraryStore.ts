@@ -141,18 +141,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     set({ tracks: [] });
   },
   toggleTrackLiked: async (id) => {
-    const currentTracks = get().tracks;
-    const existing = currentTracks.find((track) => track.id === id);
-    if (!existing) return;
-    const updated: Track = {
-      ...existing,
-      liked: !existing.liked,
-    };
-    await trackDb.put(updated);
-    set({
-      tracks: currentTracks.map((track) =>
-        track.id === id ? updated : track
-      ),
-    });
+    const { toggle } = await import("./profileLikesStore").then((m) => m.useProfileLikesStore.getState());
+    await toggle(id);
   },
 }));

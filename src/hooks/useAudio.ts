@@ -69,6 +69,12 @@ export const useAudio = () => {
       setDuration(audio.duration || 0);
     };
     audio.onended = () => {
+      const repeat = usePlayerStore.getState().repeat;
+      if (repeat === "track") {
+        audio.currentTime = 0;
+        void audio.play();
+        return;
+      }
       next();
     };
   }, [next, setCurrentTime, setDuration]);

@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { playHistoryDb } from "../db/db";
+import { useProfileStore } from "./profileStore";
 import type { PlayHistoryEntry, Track } from "../types";
 
 export type WrappedStats = {
@@ -22,17 +23,51 @@ export const usePlayHistoryStore = create<PlayHistoryState>((set, get) => ({
   entries: [],
   isLoading: true,
   hydrate: async () => {
-    const entries = await playHistoryDb.getAll();
-    entries.sort((a, b) => a.playedAt - b.playedAt);
-    set({ entries, isLoading: false });
+    const profileId = useProfileStore.getState().currentProfileId;
+    const profiles = useProfileStore.getState().profiles;
+    const sortedByCreated = [...profiles].sort((a, b) => a.createdAt - b.createdAt);
+    const oldestProfile = sortedByCreated[0] ?? null;
+    const defaultProfileId = oldestProfile?.id ?? profiles[0]?.id;
+    const secondProfileCreatedAt = sortedByCreated[1]?.createdAt ?? Infinity;
+    let entries = await playHistoryDb.getAll();
+    const toMigrate = entries.filter((e) => e.profileId == null);
+    if (toMigrate.length > 0 && defaultProfileId) {
+      for (const e of toMigrate) {
+        const updated = { ...e, profileId: defaultProfileId };
+        await playHistoryDb.put(updated);
+      }
+      entries = await playHistoryDb.getAll();
+    }
+    if (oldestProfile && entries.length > 0) {
+      const wronglyAssigned = entries.filter(
+        (e) =>
+          e.profileId != null &&
+          e.profileId !== oldestProfile.id &&
+          e.playedAt < secondProfileCreatedAt
+      );
+      for (const e of wronglyAssigned) {
+        await playHistoryDb.put({ ...e, profileId: oldestProfile.id });
+      }
+      if (wronglyAssigned.length > 0) {
+        entries = await playHistoryDb.getAll();
+      }
+    }
+    const filtered = profileId
+      ? entries.filter((e) => (e.profileId ?? defaultProfileId) === profileId)
+      : [];
+    filtered.sort((a, b) => a.playedAt - b.playedAt);
+    set({ entries: filtered, isLoading: false });
   },
   addPlay: async (trackId, playedAt, listenedSeconds) => {
     if (listenedSeconds <= 0) return;
+    const profileId = useProfileStore.getState().currentProfileId;
+    if (!profileId) return;
     const entry: PlayHistoryEntry = {
       id: crypto.randomUUID(),
       trackId,
       playedAt,
       listenedSeconds: Math.round(listenedSeconds),
+      profileId,
     };
     await playHistoryDb.add(entry);
     set((state) => ({
@@ -77,7 +112,13 @@ export const usePlayHistoryStore = create<PlayHistoryState>((set, get) => ({
     return { totalSeconds, topTrackIds, topArtists, year };
   },
   clearPlayHistory: async () => {
-    await playHistoryDb.clear();
+    const profileId = useProfileStore.getState().currentProfileId;
+    if (!profileId) return;
+    const all = await playHistoryDb.getAll();
+    const toRemove = all.filter((e) => e.profileId === profileId);
+    for (const e of toRemove) {
+      await playHistoryDb.remove(e.id);
+    }
     set({ entries: [] });
   },
 }));

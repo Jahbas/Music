@@ -3,6 +3,9 @@ import { create } from "zustand";
 const VOLUME_STORAGE_KEY = "player-volume";
 const SHUFFLE_STORAGE_KEY = "player-shuffle";
 const PLAYBACK_RATE_STORAGE_KEY = "player-playback-rate";
+const REPEAT_STORAGE_KEY = "player-repeat";
+
+export type RepeatMode = "off" | "queue" | "track";
 
 function getStoredVolume(): number {
   try {
@@ -36,6 +39,16 @@ function getStoredPlaybackRate(): number {
   return 1;
 }
 
+function getStoredRepeat(): RepeatMode {
+  try {
+    const raw = localStorage.getItem(REPEAT_STORAGE_KEY);
+    if (raw === "queue" || raw === "track" || raw === "off") return raw;
+  } catch {
+    // ignore
+  }
+  return "off";
+}
+
 function shuffleArray<T>(arr: T[]): T[] {
   const out = [...arr];
   for (let i = out.length - 1; i > 0; i--) {
@@ -50,6 +63,7 @@ type PlayerState = {
   queue: string[];
   isPlaying: boolean;
   shuffle: boolean;
+  repeat: RepeatMode;
   volume: number;
   currentTime: number;
   duration: number;
@@ -59,6 +73,8 @@ type PlayerState = {
   playTrackIds: (trackIds: string[], options?: { shuffle?: boolean }) => void;
   togglePlay: () => void;
   toggleShuffle: () => void;
+  cycleRepeat: () => void;
+  setRepeat: (mode: RepeatMode) => void;
   pause: () => void;
   play: () => void;
   next: () => void;
@@ -76,6 +92,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   queue: [],
   isPlaying: false,
   shuffle: getStoredShuffle(),
+  repeat: getStoredRepeat(),
   volume: getStoredVolume(),
   currentTime: 0,
   duration: 0,
@@ -112,17 +129,43 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       // ignore
     }
   },
+  cycleRepeat: () => {
+    const next: RepeatMode =
+      get().repeat === "off" ? "queue" : get().repeat === "queue" ? "track" : "off";
+    set({ repeat: next });
+    try {
+      localStorage.setItem(REPEAT_STORAGE_KEY, next);
+    } catch {
+      // ignore
+    }
+  },
+  setRepeat: (mode) => {
+    set({ repeat: mode });
+    try {
+      localStorage.setItem(REPEAT_STORAGE_KEY, mode);
+    } catch {
+      // ignore
+    }
+  },
   pause: () => set({ isPlaying: false }),
   play: () => set({ isPlaying: true }),
   next: () => {
-    const { queue, currentTrackId } = get();
+    const { queue, currentTrackId, repeat } = get();
     if (!currentTrackId || queue.length === 0) {
       return;
     }
     const currentIndex = queue.indexOf(currentTrackId);
     const nextIndex = currentIndex + 1;
+    if (repeat === "track") {
+      set({ isPlaying: true });
+      return;
+    }
     if (nextIndex < queue.length) {
       set({ currentTrackId: queue[nextIndex], isPlaying: true });
+      return;
+    }
+    if (repeat === "queue" && queue.length > 0) {
+      set({ currentTrackId: queue[0], isPlaying: true });
     }
   },
   previous: () => {

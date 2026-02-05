@@ -18,6 +18,8 @@ type TrackListProps = {
   onDeleteLibrary?: () => void;
   highlightTrackId?: string;
   onToggleLike?: (trackId: string) => void;
+  /** When provided, used for like state and sort-by-liked instead of track.liked (per-profile likes). */
+  likedTrackIds?: string[];
 };
 
 const formatDuration = (seconds: number) => {
@@ -32,8 +34,11 @@ function sortTracks(
   tracks: Track[],
   sortBy: SortKey,
   sortDir: SortDir,
-  playlistNamesByTrackId?: Record<string, string[]>
+  playlistNamesByTrackId?: Record<string, string[]>,
+  likedTrackIds?: string[]
 ): Track[] {
+  const isLiked = (t: Track) =>
+    likedTrackIds ? likedTrackIds.includes(t.id) : Boolean(t.liked);
   const sorted = [...tracks].sort((a, b) => {
     let cmp = 0;
     if (sortBy === "duration") {
@@ -49,8 +54,8 @@ function sortTracks(
     } else if (sortBy === "dateAdded") {
       cmp = a.addedAt - b.addedAt;
     } else if (sortBy === "liked") {
-      const aLiked = a.liked ? 1 : 0;
-      const bLiked = b.liked ? 1 : 0;
+      const aLiked = isLiked(a) ? 1 : 0;
+      const bLiked = isLiked(b) ? 1 : 0;
       cmp = aLiked - bLiked;
     }
     if (cmp !== 0) return sortDir === "asc" ? cmp : -cmp;
@@ -73,6 +78,7 @@ export const TrackList = ({
   onDeleteLibrary,
   highlightTrackId,
   onToggleLike,
+  likedTrackIds,
 }: TrackListProps) => {
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const [sortState, setSortState] = useState<{ key: SortKey; dir: SortDir } | null>(null);
@@ -120,8 +126,8 @@ export const TrackList = ({
 
   const sortedTracks = useMemo(() => {
     if (!sortState) return tracks;
-    return sortTracks(tracks, sortState.key, sortState.dir, playlistNamesByTrackId);
-  }, [tracks, sortState, playlistNamesByTrackId]);
+    return sortTracks(tracks, sortState.key, sortState.dir, playlistNamesByTrackId, likedTrackIds);
+  }, [tracks, sortState, playlistNamesByTrackId, likedTrackIds]);
 
   const allTrackIds = useMemo(() => sortedTracks.map((track) => track.id), [sortedTracks]);
   const allSelected = useMemo(
@@ -447,20 +453,20 @@ export const TrackList = ({
                 {onToggleLike && (
                   <button
                     type="button"
-                    className={`track-like-button${track.liked ? " track-like-button--active" : ""}`}
+                    className={`track-like-button${(likedTrackIds ? likedTrackIds.includes(track.id) : track.liked) ? " track-like-button--active" : ""}`}
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
                       onToggleLike(track.id);
                     }}
-                    title={track.liked ? "Remove from Liked Songs" : "Save to Liked Songs"}
-                    aria-label={track.liked ? "Remove from Liked Songs" : "Save to Liked Songs"}
+                    title={(likedTrackIds ? likedTrackIds.includes(track.id) : track.liked) ? "Remove from Liked Songs" : "Save to Liked Songs"}
+                    aria-label={(likedTrackIds ? likedTrackIds.includes(track.id) : track.liked) ? "Remove from Liked Songs" : "Save to Liked Songs"}
                   >
                     <svg
                       width="16"
                       height="16"
                       viewBox="0 0 24 24"
-                      fill={track.liked ? "currentColor" : "none"}
+                      fill={(likedTrackIds ? likedTrackIds.includes(track.id) : track.liked) ? "currentColor" : "none"}
                       stroke="currentColor"
                       strokeWidth="2"
                       strokeLinecap="round"

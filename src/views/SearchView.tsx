@@ -5,6 +5,7 @@ import { useDragContext } from "../hooks/useDragContext";
 import { useLibraryStore } from "../stores/libraryStore";
 import { usePlayerStore } from "../stores/playerStore";
 import { usePlaylistStore } from "../stores/playlistStore";
+import { useProfileLikesStore } from "../stores/profileLikesStore";
 
 export const SearchView = () => {
   const [searchParams] = useSearchParams();
@@ -13,6 +14,7 @@ export const SearchView = () => {
   const tracks = useLibraryStore((state) => state.tracks);
   const removeTrack = useLibraryStore((state) => state.removeTrack);
   const toggleTrackLiked = useLibraryStore((state) => state.toggleTrackLiked);
+  const likedTrackIds = useProfileLikesStore((state) => state.likedTrackIds);
   const playlists = usePlaylistStore((state) => state.playlists);
   const { onDragStart, onDragEnd } = useDragContext();
   const playTrack = usePlayerStore((state) => state.playTrack);
@@ -120,6 +122,7 @@ export const SearchView = () => {
         onDragEnd={onDragEnd}
         onDeleteSelected={handleDeleteSelected}
         onToggleLike={toggleTrackLiked}
+        likedTrackIds={likedTrackIds}
       />
     </div>
   );

@@ -6,6 +6,7 @@ import { useImageUrl } from "../hooks/useImageUrl";
 import { useLibraryStore } from "../stores/libraryStore";
 import { usePlayerStore } from "../stores/playerStore";
 import { usePlaylistStore } from "../stores/playlistStore";
+import { useProfileLikesStore } from "../stores/profileLikesStore";
 
 export const PlaylistView = () => {
   const { id } = useParams();
@@ -23,6 +24,7 @@ export const PlaylistView = () => {
   const tracks = useLibraryStore((state) => state.tracks);
   const addFiles = useLibraryStore((state) => state.addFiles);
   const toggleTrackLiked = useLibraryStore((state) => state.toggleTrackLiked);
+  const likedTrackIds = useProfileLikesStore((state) => state.likedTrackIds);
   const playTrack = usePlayerStore((state) => state.playTrack);
   const setQueue = usePlayerStore((state) => state.setQueue);
   const playTrackIds = usePlayerStore((state) => state.playTrackIds);
@@ -211,6 +213,7 @@ export const PlaylistView = () => {
         onDeleteSelected={handleDeleteSelected}
         highlightTrackId={highlightTrackId}
         onToggleLike={toggleTrackLiked}
+        likedTrackIds={likedTrackIds}
       />
     </div>
   );

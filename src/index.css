@@ -448,6 +448,128 @@ button:focus-visible {
   box-shadow: 0 0 0 2px var(--color-border);
 }
 
+.topbar-profile-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.topbar-profile-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  background: var(--color-hover);
+  color: var(--color-text);
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s ease;
+}
+.topbar-profile-button:hover {
+  background: var(--color-hover-strong);
+}
+
+.topbar-profile-name {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topbar-profile-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  min-width: 160px;
+  padding: 4px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  z-index: 100;
+}
+
+.topbar-profile-option-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  border-radius: 8px;
+  min-height: 40px;
+}
+.topbar-profile-option-row.topbar-profile-option--active {
+  background: rgba(var(--color-accent-rgb), 0.18);
+}
+.topbar-profile-option-row.topbar-profile-option--active .topbar-profile-option {
+  color: var(--color-accent);
+}
+.topbar-profile-option-row.topbar-profile-option--active .topbar-profile-delete {
+  color: var(--color-accent);
+  opacity: 0.85;
+}
+.topbar-profile-option-row .topbar-profile-option {
+  flex: 1;
+  border-radius: 8px 0 0 8px;
+}
+.topbar-profile-option-row .topbar-profile-delete {
+  border-radius: 0 8px 8px 0;
+}
+.topbar-profile-option {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  text-align: left;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-text);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.topbar-profile-option:hover {
+  background: var(--color-hover);
+}
+.topbar-profile-option-row.topbar-profile-option--active .topbar-profile-option:hover {
+  background: rgba(var(--color-accent-rgb), 0.26);
+  color: var(--color-accent);
+}
+.topbar-profile-option--active {
+  background: rgba(var(--color-accent-rgb), 0.18);
+  color: var(--color-accent);
+}
+.topbar-profile-delete {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 100%;
+  min-height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.topbar-profile-option-row .topbar-profile-delete:hover {
+  background: rgba(220, 53, 69, 0.2);
+  color: #dc3545;
+  opacity: 1;
+}
+.topbar-profile-option-row.topbar-profile-option--active .topbar-profile-delete:hover {
+  background: rgba(220, 53, 69, 0.25);
+  color: #dc3545;
+}
+.topbar-profile-option--new {
+  margin-top: 4px;
+  border-top: 1px solid var(--color-border);
+  padding-top: 8px;
+}
+
 .topbar-settings-button {
   display: flex;
   align-items: center;
@@ -654,7 +776,7 @@ button:focus-visible {
   width: 36px;
   height: 36px;
   padding: 0;
-  border-radius: 999px;
+  border-radius: 10px;
   color: var(--color-muted);
   background: transparent;
   border-color: transparent;
@@ -679,17 +801,20 @@ button:focus-visible {
 }
 
 .player-shuffle,
+.player-repeat,
 .player-previous {
   width: 30px;
   height: 30px;
   border-radius: 10px;
 }
 
-.player-shuffle--on {
+.player-controls .player-shuffle--on,
+.player-controls .player-repeat--on {
   color: var(--color-accent);
   background: rgba(var(--color-accent-rgb), 0.18);
 }
-.player-shuffle--on:hover {
+.player-controls .player-shuffle--on:hover,
+.player-controls .player-repeat--on:hover {
   color: var(--color-accent);
   background: rgba(var(--color-accent-rgb), 0.26);
 }
@@ -698,20 +823,27 @@ button:focus-visible {
   width: 44px;
   height: 44px;
   padding: 0;
-  border-radius: 999px;
+  border: none;
+  border-radius: 12px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+  background: var(--color-accent);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .play-pause-button:hover {
-  filter: brightness(1.05);
+  background: var(--color-accent);
+  filter: brightness(1.12);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
 }
 
 .play-pause-button:active {
   transform: scale(0.96);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .progress-row {
@@ -728,36 +860,28 @@ button:focus-visible {
 }
 
 .playback-speed-button {
-  width: 56px;
-  height: 28px;
-  border-radius: 8px;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 6px;
+  border-radius: 10px;
   border: 1px solid transparent;
   background: transparent;
-  color: var(--color-text);
+  color: var(--color-muted);
   font-size: 11px;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
-  padding: 0 10px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  box-shadow:
-    0 6px 18px rgba(0, 0, 0, 0.6),
-    0 0 0 1px rgba(255, 255, 255, 0.02);
-}
-
-[data-theme="light"] .playback-speed-button {
-  border-color: rgba(0, 0, 0, 0.1);
-  background: rgba(248, 248, 250, 0.98);
-  color: #050507;
-  box-shadow:
-    0 4px 14px rgba(0, 0, 0, 0.18),
-    0 0 0 1px rgba(0, 0, 0, 0.04);
+  justify-content: center;
+  gap: 2px;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .playback-speed-button:hover {
   background: var(--color-hover);
+  color: var(--color-text);
 }
 
 .playback-speed-button:focus-visible {
@@ -769,7 +893,7 @@ button:focus-visible {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  opacity: 0.75;
+  opacity: 0.8;
 }
 
 .playback-speed-menu {
@@ -1865,6 +1989,12 @@ button:focus-visible {
 
 .modal.settings-modal {
   width: 460px;
+}
+
+.delete-profile-modal .delete-profile-message {
+  margin: 0 0 20px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
 }
 
 .modal-header {

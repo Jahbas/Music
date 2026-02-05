@@ -5,7 +5,9 @@ import { useLibraryStore } from "../stores/libraryStore";
 import { usePlayHistoryStore } from "../stores/playHistoryStore";
 import { usePlayerStore } from "../stores/playerStore";
 import { usePlaylistStore } from "../stores/playlistStore";
+import { useProfileStore } from "../stores/profileStore";
 import { useFolderStore } from "../stores/folderStore";
+import { useProfileLikesStore } from "../stores/profileLikesStore";
 import { useThemeStore } from "../stores/themeStore";
 import { AddSongsProgress } from "./AddSongsProgress";
 import { DragAddToPlaylistOverlay } from "./DragAddToPlaylistOverlay";
@@ -18,8 +20,10 @@ export const Layout = () => {
   const hydrateTheme = useThemeStore((state) => state.hydrate);
   const hydrateLibrary = useLibraryStore((state) => state.hydrate);
   const hydratePlaylists = usePlaylistStore((state) => state.hydrate);
+  const hydrateProfiles = useProfileStore((state) => state.hydrate);
   const hydrateFolders = useFolderStore((state) => state.hydrate);
   const hydratePlayHistory = usePlayHistoryStore((state) => state.hydrate);
+  const hydrateProfileLikes = useProfileLikesStore((state) => state.hydrate);
   useAudio();
 
   const [draggingTrackIds, setDraggingTrackIds] = useState<string[]>([]);
@@ -28,9 +32,13 @@ export const Layout = () => {
     void hydrateTheme();
     void hydrateLibrary();
     void hydratePlaylists();
-    void hydrateFolders();
-    void hydratePlayHistory();
-  }, [hydrateTheme, hydrateLibrary, hydratePlaylists, hydrateFolders, hydratePlayHistory]);
+    void (async () => {
+      await hydrateProfiles();
+      await hydrateFolders();
+      await hydratePlayHistory();
+      await hydrateProfileLikes();
+    })();
+  }, [hydrateTheme, hydrateLibrary, hydratePlaylists, hydrateProfiles, hydrateFolders, hydratePlayHistory, hydrateProfileLikes]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {

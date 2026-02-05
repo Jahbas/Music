@@ -2,6 +2,7 @@ import { useMemo, useRef, useCallback, useState, useEffect } from "react";
 import { useImageUrl } from "../hooks/useImageUrl";
 import { useLibraryStore } from "../stores/libraryStore";
 import { usePlayerStore } from "../stores/playerStore";
+import { useProfileLikesStore } from "../stores/profileLikesStore";
 
 const formatTime = (value: number) => {
   const total = Math.floor(value);
@@ -27,9 +28,11 @@ export const PlayerBar = () => {
     duration,
     volume,
     shuffle,
+    repeat,
     playbackRate,
     togglePlay,
     toggleShuffle,
+    cycleRepeat,
     next,
     previous,
     setVolume,
@@ -39,6 +42,10 @@ export const PlayerBar = () => {
   const currentTrack = useMemo(
     () => tracks.find((track) => track.id === currentTrackId),
     [tracks, currentTrackId]
+  );
+  const likedTrackIds = useProfileLikesStore((state) => state.likedTrackIds);
+  const currentTrackLiked = Boolean(
+    currentTrack && likedTrackIds.includes(currentTrack.id)
   );
   const artworkUrl = useImageUrl(currentTrack?.artworkId);
 
@@ -172,6 +179,28 @@ export const PlayerBar = () => {
           </button>
           <button
             type="button"
+            className={`ghost-button player-repeat ${repeat !== "off" ? "player-repeat--on" : ""}`}
+            onClick={cycleRepeat}
+            title={
+              repeat === "off"
+                ? "Repeat off"
+                : repeat === "queue"
+                  ? "Repeat queue"
+                  : "Repeat track"
+            }
+            aria-label={
+              repeat === "off"
+                ? "Repeat off"
+                : repeat === "queue"
+                  ? "Repeat queue"
+                  : "Repeat track"
+            }
+            aria-pressed={repeat !== "off"}
+          >
+            <RepeatIcon />
+          </button>
+          <button
+            type="button"
             className="ghost-button player-previous"
             onClick={previous}
             title="Previous"
@@ -181,7 +210,7 @@ export const PlayerBar = () => {
           </button>
           <button
             type="button"
-            className="primary-button play-pause-button"
+            className="play-pause-button"
             onClick={togglePlay}
             title={isPlaying ? "Pause" : "Play"}
             aria-label={isPlaying ? "Pause" : "Play"}
@@ -201,16 +230,16 @@ export const PlayerBar = () => {
             <button
               type="button"
               className={`player-like-button${
-                currentTrack.liked ? " player-like-button--active" : ""
+                currentTrackLiked ? " player-like-button--active" : ""
               }`}
               onClick={() => toggleTrackLiked(currentTrack.id)}
               title={
-                currentTrack.liked
+                currentTrackLiked
                   ? "Remove from Liked Songs"
                   : "Save to Liked Songs"
               }
               aria-label={
-                currentTrack.liked
+                currentTrackLiked
                   ? "Remove from Liked Songs"
                   : "Save to Liked Songs"
               }
@@ -219,7 +248,7 @@ export const PlayerBar = () => {
                 width="18"
                 height="18"
                 viewBox="0 0 24 24"
-                fill={currentTrack.liked ? "currentColor" : "none"}
+                fill={currentTrackLiked ? "currentColor" : "none"}
                 stroke="currentColor"
                 strokeWidth="2"
                 strokeLinecap="round"
@@ -350,6 +379,17 @@ function ShuffleIcon() {
   );
 }
 
+function RepeatIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <polyline points="17 1 21 5 17 9" />
+      <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+      <polyline points="7 23 3 19 7 15" />
+      <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+    </svg>
+  );
+}
+
 function PreviousIcon() {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
@@ -368,16 +408,16 @@ function NextIcon() {
 
 function PlayIcon() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M8 5v14l11-7L8 5z" />
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M8 5.14v13.72c0 .8.87 1.3 1.54.84l11-6.86c.63-.39.63-1.29 0-1.68l-11-6.86C8.87 3.84 8 4.34 8 5.14z" />
     </svg>
   );
 }
 
 function PauseIcon() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M6 4h3v16H6V4zm9 0h3v16h-3V4z" />
     </svg>
   );
 }

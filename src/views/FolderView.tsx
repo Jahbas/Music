@@ -3,10 +3,12 @@ import { useParams } from "react-router-dom";
 import { TrackList } from "../components/TrackList";
 import { useDragContext } from "../hooks/useDragContext";
 import { useImageUrl } from "../hooks/useImageUrl";
+import { getExpandPlaylistsOnFolderPlay } from "../utils/preferences";
 import { useLibraryStore } from "../stores/libraryStore";
 import { usePlayerStore } from "../stores/playerStore";
 import { usePlaylistStore } from "../stores/playlistStore";
 import { useFolderStore } from "../stores/folderStore";
+import { useProfileLikesStore } from "../stores/profileLikesStore";
 
 export const FolderView = () => {
   const { id } = useParams();
@@ -14,6 +16,7 @@ export const FolderView = () => {
   const tracks = useLibraryStore((state) => state.tracks);
   const removeTrack = useLibraryStore((state) => state.removeTrack);
   const toggleTrackLiked = useLibraryStore((state) => state.toggleTrackLiked);
+  const likedTrackIds = useProfileLikesStore((state) => state.likedTrackIds);
   const playlists = usePlaylistStore((state) => state.playlists);
   const folders = useFolderStore((state) => state.folders);
   const playTrack = usePlayerStore((state) => state.playTrack);
@@ -113,7 +116,9 @@ export const FolderView = () => {
 
   const handlePlayFolder = () => {
     if (folderTracks.length === 0) return;
-    setExpandedPlaylistIds(new Set(folderPlaylists.map((playlist) => playlist.id)));
+    if (getExpandPlaylistsOnFolderPlay()) {
+      setExpandedPlaylistIds(new Set(folderPlaylists.map((playlist) => playlist.id)));
+    }
     playTrackIds(
       folderTracks.map((track) => track.id),
       { shuffle }
@@ -287,6 +292,7 @@ export const FolderView = () => {
                     onDragEnd={onDragEnd}
                     onDeleteSelected={handleDeleteSelected}
                     onToggleLike={toggleTrackLiked}
+                    likedTrackIds={likedTrackIds}
                   />
                 )}
               </section>

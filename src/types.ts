@@ -29,6 +29,12 @@ export type Playlist = {
   folderId?: string;
 };
 
+export type Profile = {
+  id: string;
+  name: string;
+  createdAt: number;
+};
+
 export type PlaylistFolder = {
   id: string;
   name: string;
@@ -39,6 +45,7 @@ export type PlaylistFolder = {
   updatedAt: number;
   pinned?: boolean;
   order?: number;
+  profileId?: string;
 };
 
 export type ThemeMode = "dark" | "light" | "oled";
@@ -53,4 +60,10 @@ export type PlayHistoryEntry = {
   trackId: string;
   playedAt: number;
   listenedSeconds: number;
+  profileId?: string;
+};
+
+export type ProfileLike = {
+  profileId: string;
+  trackId: string;
 };

@@ -3,6 +3,7 @@ import { useDragContext } from "../hooks/useDragContext";
 import { useLibraryStore } from "../stores/libraryStore";
 import { usePlaylistStore } from "../stores/playlistStore";
 import { usePlayerStore } from "../stores/playerStore";
+import { useProfileLikesStore } from "../stores/profileLikesStore";
 import { TrackList } from "../components/TrackList";
 import { Modal } from "../components/Modal";
 
@@ -13,6 +14,7 @@ export const LibraryView = () => {
   const removeTrack = useLibraryStore((state) => state.removeTrack);
   const clearLibrary = useLibraryStore((state) => state.clearLibrary);
   const toggleTrackLiked = useLibraryStore((state) => state.toggleTrackLiked);
+  const likedTrackIds = useProfileLikesStore((state) => state.likedTrackIds);
   const removeTrackIdsFromAllPlaylists = usePlaylistStore(
     (state) => state.removeTrackIdsFromAllPlaylists
   );
@@ -138,6 +140,7 @@ export const LibraryView = () => {
             : undefined
         }
         onToggleLike={toggleTrackLiked}
+        likedTrackIds={likedTrackIds}
       />
       <Modal
         title="Delete entire library?"

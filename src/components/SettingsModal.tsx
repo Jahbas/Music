@@ -4,8 +4,12 @@ import { useThemeStore } from "../stores/themeStore";
 import { usePlayHistoryStore } from "../stores/playHistoryStore";
 import { useLibraryStore } from "../stores/libraryStore";
 import { usePlaylistStore } from "../stores/playlistStore";
+import { useProfileStore } from "../stores/profileStore";
+import { useFolderStore } from "../stores/folderStore";
+import { useProfileLikesStore } from "../stores/profileLikesStore";
 import { usePlayerStore } from "../stores/playerStore";
-import { trackDb, playlistDb, imageDb, playHistoryDb, themeDb } from "../db/db";
+import { trackDb, playlistDb, imageDb, playHistoryDb, themeDb, folderDb, profileDb, profileLikesDb } from "../db/db";
+import { getExpandPlaylistsOnFolderPlay, setExpandPlaylistsOnFolderPlay } from "../utils/preferences";
 import { Modal } from "./Modal";
 import { ColorPicker } from "./ColorPicker";
 
@@ -32,7 +36,6 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
   const accent = useThemeStore((state) => state.accent);
   const setMode = useThemeStore((state) => state.setMode);
   const setAccent = useThemeStore((state) => state.setAccent);
-  const resetTheme = useThemeStore((state) => state.resetTheme);
   const clearPlayHistory = usePlayHistoryStore((state) => state.clearPlayHistory);
   const [confirmClearHistory, setConfirmClearHistory] = useState(false);
   const [confirmDeleteAllData, setConfirmDeleteAllData] = useState(false);
@@ -40,6 +43,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
   const [dataInfoHover, setDataInfoHover] = useState(false);
   const [oledUnlocked, setOledUnlocked] = useState(false);
   const [darkTapCount, setDarkTapCount] = useState(0);
+  const [expandPlaylistsOnFolderPlay, setExpandPlaylistsOnFolderPlayState] = useState(true);
 
   useEffect(() => {
     if (!isOpen) {
@@ -49,6 +53,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
     }
     setOledUnlocked(getOledUnlocked());
     setDarkTapCount(0);
+    setExpandPlaylistsOnFolderPlayState(getExpandPlaylistsOnFolderPlay());
     const getStorageUsage = async () => {
       try {
         if (navigator.storage?.estimate) {
@@ -91,12 +96,18 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
     }
     await trackDb.clear();
     await playlistDb.clear();
+    await profileDb.clear();
+    await folderDb.clear();
     await imageDb.clear();
     await playHistoryDb.clear();
+    await profileLikesDb.clear();
     await themeDb.clear();
     await useLibraryStore.getState().hydrate();
     await usePlaylistStore.getState().hydrate();
+    await useProfileStore.getState().hydrate();
+    await useFolderStore.getState().hydrate();
     await usePlayHistoryStore.getState().hydrate();
+    await useProfileLikesStore.getState().hydrate();
     useThemeStore.getState().resetTheme();
     usePlayerStore.getState().clearQueue();
     setConfirmDeleteAllData(false);
@@ -120,6 +131,28 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
           </div>
           <p className="settings-description">
             See your listening stats, top tracks and artists by year.
+          </p>
+        </section>
+
+        <section className="settings-section">
+          <h4 className="settings-section-title">Folders</h4>
+          <div className="settings-row">
+            <span className="settings-row-label">Expand all playlists when playing folder</span>
+            <button
+              type="button"
+              className={expandPlaylistsOnFolderPlay ? "primary-button" : "secondary-button"}
+              onClick={() => {
+                const next = !expandPlaylistsOnFolderPlay;
+                setExpandPlaylistsOnFolderPlayState(next);
+                setExpandPlaylistsOnFolderPlay(next);
+              }}
+              aria-pressed={expandPlaylistsOnFolderPlay}
+            >
+              {expandPlaylistsOnFolderPlay ? "On" : "Off"}
+            </button>
+          </div>
+          <p className="settings-description">
+            When on, clicking Play on a folder expands every playlist in that folder. When off, playlists stay collapsed.
           </p>
         </section>
 
@@ -222,7 +255,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
             </button>
           </div>
           <p className="settings-description">
-            Removes all tracks, playlists, images, play history, and resets theme. The app will be empty. This cannot be undone.
+            Removes all tracks, playlists, profiles, folders, images, play history, and resets theme. The app will be empty. This cannot be undone.
           </p>
         </section>
       </div>

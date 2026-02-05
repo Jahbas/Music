@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { imageDb, folderDb } from "../db/db";
+import { useProfileStore } from "./profileStore";
 import type { PlaylistFolder } from "../types";
 
 type FolderState = {
@@ -36,10 +37,27 @@ export const useFolderStore = create<FolderState>((set, get) => ({
   folders: [],
   isLoading: true,
   hydrate: async () => {
-    const folders = await folderDb.getAll();
-    set({ folders, isLoading: false });
+    let allFolders = await folderDb.getAll();
+    const currentProfileId = useProfileStore.getState().currentProfileId;
+    if (currentProfileId) {
+      const toMigrate = allFolders.filter((f) => !f.profileId);
+      for (const folder of toMigrate) {
+        const updated = { ...folder, profileId: currentProfileId };
+        await folderDb.put(updated);
+      }
+      if (toMigrate.length > 0) {
+        allFolders = await folderDb.getAll();
+      }
+      const folders = allFolders.filter(
+        (f) => (f.profileId ?? currentProfileId) === currentProfileId
+      );
+      set({ folders, isLoading: false });
+    } else {
+      set({ folders: [], isLoading: false });
+    }
   },
   createFolder: async ({ name, description, iconImageFile, bannerImageFile }) => {
+    const currentProfileId = useProfileStore.getState().currentProfileId;
     const now = Date.now();
     const folder: PlaylistFolder = {
       id: crypto.randomUUID(),
@@ -49,6 +67,7 @@ export const useFolderStore = create<FolderState>((set, get) => ({
       bannerImageId: undefined,
       createdAt: now,
       updatedAt: now,
+      profileId: currentProfileId ?? undefined,
     };
     if (iconImageFile) {
       const imageId = crypto.randomUUID();

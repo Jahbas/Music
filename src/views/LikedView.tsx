@@ -4,11 +4,13 @@ import { useDragContext } from "../hooks/useDragContext";
 import { useLibraryStore } from "../stores/libraryStore";
 import { usePlayerStore } from "../stores/playerStore";
 import { usePlaylistStore } from "../stores/playlistStore";
+import { useProfileLikesStore } from "../stores/profileLikesStore";
 
 export const LikedView = () => {
   const { onDragStart, onDragEnd } = useDragContext();
   const tracks = useLibraryStore((state) => state.tracks);
   const removeTrack = useLibraryStore((state) => state.removeTrack);
+  const likedTrackIds = useProfileLikesStore((state) => state.likedTrackIds);
   const toggleTrackLiked = useLibraryStore((state) => state.toggleTrackLiked);
   const playTrack = usePlayerStore((state) => state.playTrack);
   const setQueue = usePlayerStore((state) => state.setQueue);
@@ -19,8 +21,8 @@ export const LikedView = () => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const likedTracks = useMemo(
-    () => tracks.filter((track) => track.liked),
-    [tracks]
+    () => tracks.filter((track) => likedTrackIds.includes(track.id)),
+    [tracks, likedTrackIds]
   );
 
   const playlistNamesByTrackId = useMemo(() => {
@@ -134,6 +136,7 @@ export const LikedView = () => {
           onDragEnd={onDragEnd}
           onDeleteSelected={handleDeleteSelected}
           onToggleLike={toggleTrackLiked}
+          likedTrackIds={likedTrackIds}
         />
       )}
     </div>
