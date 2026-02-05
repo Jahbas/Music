@@ -3,6 +3,16 @@
 **Music** is a fast, offline‑first, fully open source music player that runs entirely in your browser.  
 Import local files, organize them into playlists and folders, and enjoy a clean, keyboard‑friendly UI with rich theming.
 
+### Preview
+
+| Main view | Queue panel | Fullscreen player |
+|-----------|-------------|-------------------|
+| ![Main view](img/main.preview.png) | ![Queue panel](img/queue.preview.png) | ![Fullscreen player](img/fullscreen.preview.png) |
+
+| Wrapped (play history) | Session & usage telemetry |
+|------------------------|---------------------------|
+| ![Wrapped](img/wrapped.preview.png) | ![Telemetry](img/telemetry.preview.png) |
+
 ### Highlights
 
 - **Local-first library**: All tracks, playlists, folders, and artwork are stored in IndexedDB in your browser.
