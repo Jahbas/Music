@@ -1,4 +1,5 @@
 ## Music
+# very well working but I'm currently focusing on the desktop app ( https://github.com/Jahbas/Music-App ) and not on the Web-Player so much more because I need an spotify/apple music alternative for myself which uses less sys recources. :)
 
 A fast, offline‑first, fully open source music player that runs entirely in your browser.  
 Import local files, organize them into playlists and folders, and enjoy a clean, keyboard‑friendly UI with rich theming.
