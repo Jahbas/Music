@@ -1,3 +1,29 @@
+## 1.4.0 - 2026-02-06
+
+### New
+
+- **Crossfade playback**: Optional crossfade engine that uses a dual-lane audio pipeline to smoothly overlap the end of one track with the start of the next. Configure crossfade length (up to 12 seconds) from Settings → Audio.
+- **Gapless playback toggle**: New "Gapless playback" switch in Settings → Audio that minimizes gaps between tracks when crossfade is off. Uses background preloading to keep transitions tight where the browser and file formats allow.
+- **Equalizer with presets**: Six-band parametric EQ with presets (Flat, Bass boost, Treble boost, Vocal, Loudness). Enable and pick a preset from the Equalizer section in Settings → Audio; settings are stored per device.
+- **Advanced EQ editor & graph**: Advanced EQ view with a graphical curve editor. Drag points on the frequency curve or adjust per-band gain and Q sliders to fine-tune your sound. "Reset to preset" snaps bands back to the currently selected preset.
+- **Theme + audio + player profiles**: Save named profiles that capture theme (mode, accent, density, motion), audio settings (crossfade, gapless, EQ), player behavior (shuffle, repeat, volume, speed, auto-play on load), and preferences (expand playlists on folder play, telemetry). Apply profiles from Settings → Profiles to instantly switch setups.
+- **Settings backup JSON**: Export a JSON snapshot of theme, audio, player settings, and library structure (folders and playlists) from Settings → Data ("Download JSON"). Import the file on the same device/browser profile to update existing folders and playlists and restore your setup.
+
+### Improvements
+
+- **Settings layout**: Settings is now a full-screen, tabbed experience ("General", "Appearance", "Profiles", "Audio", "Player", "Data & privacy", "Support") with clearer descriptions and better grouping of controls.
+- **Data & privacy tools**: New "Delete unused tracks" action that removes tracks not referenced by any playlist and not in the current queue, plus improved storage info explaining how and where data is stored. Clearer, stronger warnings for clearing history and deleting all website data.
+- **Sidebar drag-and-drop**: More robust sidebar drag-and-drop handling for playlists, folders, and track/file drops. Visual highlights make it clearer where items will land, and playlist moves into folders reset drag state reliably after drops.
+- **Audio engine integration**: The crossfade/gapless engine is wired into the player store and audio hook, keeping playback state, volume, speed, and repeat behavior consistent across normal, crossfaded, and gapless playback.
+
+### Internal
+
+- **Audio settings store**: Centralized audio settings in a dedicated store with persisted crossfade, gapless, and EQ state, plus preset-to-band mapping for the EQ.
+- **Theme store profiles**: Theme profiles now include audio, player, and behavior preferences and can apply those back into their respective stores, including helper preferences (auto-play on load, expand playlists on folder play, telemetry enabled).
+- **Settings backup utilities**: Added utilities for exporting/importing settings and structure, including internal helpers for updating folder and playlist records in the IndexedDB-backed stores.
+
+---
+
 ## 1.3.0 - 2026-02-05
 
 ### New

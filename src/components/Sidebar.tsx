@@ -534,7 +534,7 @@ export const Sidebar = ({ dragContext, onNavigate }: SidebarProps) => {
         </button>
       </div>
       <div
-        className={`sidebar-section ${dragOverSection ? "sidebar-section--drag-over" : ""}`}
+        className={`sidebar-section ${foldersCollapsed ? "sidebar-section--collapsed" : ""} ${dragOverSection ? "sidebar-section--drag-over" : ""}`}
         onContextMenu={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -597,7 +597,7 @@ export const Sidebar = ({ dragContext, onNavigate }: SidebarProps) => {
         )}
       </div>
       <div
-        className={`sidebar-section sidebar-section--fill ${dragOverSection ? "sidebar-section--drag-over" : ""}`}
+        className={`sidebar-section sidebar-section--fill ${playlistsCollapsed ? "sidebar-section--collapsed" : ""} ${dragOverSection ? "sidebar-section--drag-over" : ""}`}
         onContextMenu={(e) => {
           e.preventDefault();
           e.stopPropagation();

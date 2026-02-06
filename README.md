@@ -141,6 +141,7 @@ npm run preview
 
 The project uses a human-readable changelog that tracks every notable change.
 
+- **1.4.0 – Crossfade, gapless, and EQ**: Added a dual-lane audio engine with configurable crossfade, a gapless playback toggle, a six-band EQ with presets and an advanced curve editor, plus theme/audio/player profiles and JSON settings backup.
 - **1.3.0 – Queue panel and telemetry**: Added a dedicated queue panel with drag-and-drop support and a local-only session & usage telemetry system with a rich `/telemetry` view.
 - **1.2.0 – Repeat and profiles**: Introduced repeat queue/track modes, multiple profiles, and a setting for expanding playlists when playing a folder.
 - **1.1.0 – Folders and Liked Songs**: Added playlist folders, a folder view, a global Liked Songs view, and improved playback speed and sidebar organization.

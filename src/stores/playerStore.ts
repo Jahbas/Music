@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { useTelemetryStore } from "./telemetryStore";
-import { getTelemetryEnabled } from "../utils/preferences";
+import { getTelemetryEnabled, getAutoPlayOnLoad } from "../utils/preferences";
 
 const VOLUME_STORAGE_KEY = "player-volume";
 const SHUFFLE_STORAGE_KEY = "player-shuffle";
@@ -33,7 +33,9 @@ function getStoredPlayerPosition(): {
       parsed && typeof parsed.currentTime === "number" && parsed.currentTime >= 0
         ? parsed.currentTime
         : 0;
-    const isPlaying = parsed != null && parsed.isPlaying === true;
+    const persistedIsPlaying = parsed != null && parsed.isPlaying === true;
+    const autoPlayOnLoad = getAutoPlayOnLoad();
+    const isPlaying = autoPlayOnLoad && persistedIsPlaying;
     return { trackId, currentTime, isPlaying };
   } catch {
     return { trackId: null, currentTime: 0, isPlaying: false };

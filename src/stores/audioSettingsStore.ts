@@ -3,6 +3,8 @@ import { create } from "zustand";
 const CROSSFADE_ENABLED_KEY = "audio-crossfade-enabled";
 const CROSSFADE_MS_KEY = "audio-crossfade-ms";
 const GAPLESS_ENABLED_KEY = "audio-gapless-enabled";
+const EQ_ENABLED_KEY = "audio-eq-enabled";
+const EQ_PRESET_ID_KEY = "audio-eq-preset-id";
 
 export type EqBand = {
   frequency: number;
@@ -44,6 +46,18 @@ function loadNumber(key: string, fallback: number, min: number, max: number): nu
     const n = Number(raw);
     if (!Number.isFinite(n)) return fallback;
     return Math.min(max, Math.max(min, n));
+  } catch {
+    return fallback;
+  }
+}
+
+function loadEqPresetId(key: string, fallback: EqPresetId): EqPresetId {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw === "flat" || raw === "bassBoost" || raw === "trebleBoost" || raw === "vocal" || raw === "loudness") {
+      return raw;
+    }
+    return fallback;
   } catch {
     return fallback;
   }
@@ -122,9 +136,9 @@ export const useAudioSettingsStore = create<AudioSettingsState>((set, get) => ({
   crossfadeEnabled: loadBoolean(CROSSFADE_ENABLED_KEY, false),
   crossfadeMs: loadNumber(CROSSFADE_MS_KEY, 5000, 0, 12000),
   gaplessEnabled: loadBoolean(GAPLESS_ENABLED_KEY, true),
-  eqEnabled: false,
-  eqPresetId: "flat",
-  eqBands: DEFAULT_EQ_BANDS,
+  eqEnabled: loadBoolean(EQ_ENABLED_KEY, false),
+  eqPresetId: loadEqPresetId(EQ_PRESET_ID_KEY, "flat"),
+  eqBands: presetToBands(loadEqPresetId(EQ_PRESET_ID_KEY, "flat")),
   setCrossfadeEnabled: (value) => {
     set({ crossfadeEnabled: value });
     persistBoolean(CROSSFADE_ENABLED_KEY, value);
@@ -140,12 +154,15 @@ export const useAudioSettingsStore = create<AudioSettingsState>((set, get) => ({
   },
   setEqEnabled: (value) => {
     set({ eqEnabled: value });
+    persistBoolean(EQ_ENABLED_KEY, value);
   },
   setEqPresetId: (preset) => {
+    const bands = presetToBands(preset);
     set({
       eqPresetId: preset,
-      eqBands: presetToBands(preset),
+      eqBands: bands,
     });
+    persistBoolean(EQ_PRESET_ID_KEY, preset);
   },
   setEqBands: (bands) => {
     set({ eqBands: bands });

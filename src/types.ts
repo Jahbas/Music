@@ -75,6 +75,26 @@ export type ThemeSettings = {
   accent: string;
   density: ThemeDensity;
   motion: MotionPreference;
+  name?: string;
+  audio?: {
+    crossfadeEnabled: boolean;
+    crossfadeMs: number;
+    gaplessEnabled: boolean;
+    eqEnabled: boolean;
+    eqPresetId: string;
+    eqBands: { frequency: number; gain: number; q: number }[];
+  };
+  player?: {
+    shuffle: boolean;
+    repeat: string;
+    volume: number;
+    playbackRate: number;
+    autoPlayOnLoad?: boolean;
+  };
+  preferences?: {
+    expandPlaylistsOnFolderPlay: boolean;
+    telemetryEnabled: boolean;
+  };
 };
 
 export type PlayHistoryEntry = {

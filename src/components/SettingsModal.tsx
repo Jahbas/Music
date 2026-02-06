@@ -10,8 +10,17 @@ import { useProfileLikesStore } from "../stores/profileLikesStore";
 import { usePlayerStore } from "../stores/playerStore";
 import { useAudioSettingsStore } from "../stores/audioSettingsStore";
 import type { EqPresetId } from "../stores/audioSettingsStore";
+import { EqAdvancedGraph } from "./EqAdvancedGraph";
+import { exportSettingsToJson, importSettingsFromJson } from "../utils/settingsBackup";
 import { trackDb, playlistDb, imageDb, playHistoryDb, themeDb, folderDb, profileDb, profileLikesDb } from "../db/db";
-import { getExpandPlaylistsOnFolderPlay, setExpandPlaylistsOnFolderPlay } from "../utils/preferences";
+import {
+  getExpandPlaylistsOnFolderPlay,
+  setExpandPlaylistsOnFolderPlay,
+  getAutoPlayOnLoad,
+  setAutoPlayOnLoad,
+  getTelemetryEnabled,
+  setTelemetryEnabled,
+} from "../utils/preferences";
 import { ColorPicker } from "./ColorPicker";
 
 const OLED_UNLOCK_KEY = "oled-mode-unlocked";
@@ -33,12 +42,14 @@ type SettingsModalProps = {
 };
 
 export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
-  type SettingsTabId = "general" | "appearance" | "audio" | "sync" | "data" | "support";
+  type SettingsTabId = "general" | "appearance" | "profiles" | "audio" | "player" | "data" | "support";
 
   const SETTINGS_TABS: { id: SettingsTabId; label: string }[] = [
     { id: "general", label: "General" },
     { id: "appearance", label: "Appearance" },
+    { id: "profiles", label: "Profiles" },
     { id: "audio", label: "Audio" },
+    { id: "player", label: "Player" },
     { id: "data", label: "Data & privacy" },
     { id: "support", label: "Support" },
   ];
@@ -48,10 +59,14 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
   const accent = useThemeStore((state) => state.accent);
   const density = useThemeStore((state) => state.density);
   const motion = useThemeStore((state) => state.motion);
+  const profiles = useThemeStore((state) => state.profiles);
   const setMode = useThemeStore((state) => state.setMode);
   const setAccent = useThemeStore((state) => state.setAccent);
   const setDensity = useThemeStore((state) => state.setDensity);
   const setMotion = useThemeStore((state) => state.setMotion);
+  const saveThemeProfile = useThemeStore((state) => state.saveProfile);
+  const applyThemeProfile = useThemeStore((state) => state.applyProfile);
+  const deleteThemeProfile = useThemeStore((state) => state.deleteProfile);
   const clearPlayHistory = usePlayHistoryStore((state) => state.clearPlayHistory);
   const [confirmClearHistory, setConfirmClearHistory] = useState(false);
   const [confirmDeleteAllData, setConfirmDeleteAllData] = useState(false);
@@ -60,8 +75,13 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
   const [oledUnlocked, setOledUnlocked] = useState(false);
   const [darkTapCount, setDarkTapCount] = useState(0);
   const [expandPlaylistsOnFolderPlay, setExpandPlaylistsOnFolderPlayState] = useState(true);
+  const [autoPlayOnLoad, setAutoPlayOnLoadState] = useState(true);
+  const [telemetryEnabled, setTelemetryEnabledState] = useState(false);
+  const [isImportingSettings, setIsImportingSettings] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [activeTab, setActiveTab] = useState<SettingsTabId>("general");
   const [isEqPresetOpen, setIsEqPresetOpen] = useState(false);
+  const [showAdvancedEq, setShowAdvancedEq] = useState(false);
   const eqPresetDropdownRef = useRef<HTMLDivElement | null>(null);
 
   const EQ_PRESETS: { id: EqPresetId; label: string }[] = [
@@ -77,11 +97,17 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
   const gaplessEnabled = useAudioSettingsStore((s) => s.gaplessEnabled);
   const eqEnabled = useAudioSettingsStore((s) => s.eqEnabled);
   const eqPresetId = useAudioSettingsStore((s) => s.eqPresetId);
+  const eqBands = useAudioSettingsStore((s) => s.eqBands);
   const setCrossfadeEnabled = useAudioSettingsStore((s) => s.setCrossfadeEnabled);
   const setCrossfadeMs = useAudioSettingsStore((s) => s.setCrossfadeMs);
   const setGaplessEnabled = useAudioSettingsStore((s) => s.setGaplessEnabled);
   const setEqEnabled = useAudioSettingsStore((s) => s.setEqEnabled);
   const setEqPresetId = useAudioSettingsStore((s) => s.setEqPresetId);
+  const setEqBands = useAudioSettingsStore((s) => s.setEqBands);
+  const shuffle = usePlayerStore((s) => s.shuffle);
+  const repeat = usePlayerStore((s) => s.repeat);
+  const setShuffle = usePlayerStore((s) => s.setShuffle);
+  const setRepeat = usePlayerStore((s) => s.setRepeat);
 
   useEffect(() => {
     if (!isOpen) {
@@ -93,6 +119,8 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
     setOledUnlocked(getOledUnlocked());
     setDarkTapCount(0);
     setExpandPlaylistsOnFolderPlayState(getExpandPlaylistsOnFolderPlay());
+    setAutoPlayOnLoadState(getAutoPlayOnLoad());
+    setTelemetryEnabledState(getTelemetryEnabled());
     const getStorageUsage = async () => {
       try {
         if (navigator.storage?.estimate) {
@@ -176,6 +204,54 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
     onClose();
   };
 
+  const [confirmDeleteUnusedTracks, setConfirmDeleteUnusedTracks] = useState(false);
+  const [lastUnusedDeleteCount, setLastUnusedDeleteCount] = useState<number | null>(null);
+  const [isSavingThemeProfile, setIsSavingThemeProfile] = useState(false);
+  const [newThemeProfileName, setNewThemeProfileName] = useState("");
+
+  const handleDeleteUnusedTracks = async () => {
+    const libraryState = useLibraryStore.getState();
+    const playlistState = usePlaylistStore.getState();
+    const playerState = usePlayerStore.getState();
+
+    const allTracks = libraryState.tracks;
+    const playlists = playlistState.playlists;
+
+    const usedTrackIds = new Set<string>();
+    for (const playlist of playlists) {
+      for (const id of playlist.trackIds) {
+        usedTrackIds.add(id);
+      }
+    }
+    for (const id of playerState.queue) {
+      usedTrackIds.add(id);
+    }
+    if (playerState.currentTrackId) {
+      usedTrackIds.add(playerState.currentTrackId);
+    }
+
+    const unusedTrackIds = allTracks
+      .map((t) => t.id)
+      .filter((id) => !usedTrackIds.has(id));
+
+    if (!confirmDeleteUnusedTracks) {
+      setLastUnusedDeleteCount(unusedTrackIds.length);
+      setConfirmDeleteUnusedTracks(true);
+      return;
+    }
+
+    for (const id of unusedTrackIds) {
+      // removeTrack updates both IndexedDB and in-memory library state
+      // and will no-op if the track was already removed.
+      // eslint-disable-next-line no-await-in-loop
+      await libraryState.removeTrack(id);
+    }
+
+    setConfirmDeleteUnusedTracks(false);
+    setLastUnusedDeleteCount(null);
+    await libraryState.hydrate();
+  };
+
   const handleOpenGitHubStar = () => {
     try {
       window.open(GITHUB_REPO_URL, "_blank", "noopener,noreferrer");
@@ -207,13 +283,31 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
           <span className="settings-row-label">Session & usage telemetry</span>
           <button
             type="button"
+            className={`${telemetryEnabled ? "primary-button" : "secondary-button"} settings-row-action`}
+            onClick={() => {
+              const next = !telemetryEnabled;
+              setTelemetryEnabled(next);
+              setTelemetryEnabledState(next);
+            }}
+            aria-pressed={telemetryEnabled}
+          >
+            {telemetryEnabled ? "On" : "Off"}
+          </button>
+        </div>
+        <p className="settings-description">
+          Records visits, listening time, pages, searches, and player actions. Data stays in your browser.
+        </p>
+        <div className="settings-row">
+          <span className="settings-row-label">Telemetry details</span>
+          <button
+            type="button"
             className="secondary-button settings-row-action"
             onClick={handleOpenTelemetry}
           >
             Open
           </button>
         </div>
-        <p className="settings-description">Inspect local-only usage analytics.</p>
+        <p className="settings-description">Inspect local-only usage analytics and export telemetry as JSON.</p>
       </section>
 
       <section className="settings-section">
@@ -222,7 +316,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
           <span className="settings-row-label">Expand all playlists when playing folder</span>
           <button
             type="button"
-            className={expandPlaylistsOnFolderPlay ? "primary-button" : "secondary-button"}
+            className={`${expandPlaylistsOnFolderPlay ? "primary-button" : "secondary-button"} settings-row-action`}
             onClick={() => {
               const next = !expandPlaylistsOnFolderPlay;
               setExpandPlaylistsOnFolderPlayState(next);
@@ -333,7 +427,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
           <span className="settings-row-label">Reduce motion</span>
           <button
             type="button"
-            className={motion === "reduced" ? "primary-button" : "secondary-button"}
+            className={`${motion === "reduced" ? "primary-button" : "secondary-button"} settings-row-action`}
             onClick={() => setMotion(motion === "reduced" ? "normal" : "reduced")}
             aria-pressed={motion === "reduced"}
           >
@@ -344,6 +438,112 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
           When on, most animations and transitions are minimized.
         </p>
       </section>
+    </div>
+  );
+
+  const renderProfilesTab = () => (
+    <div className="settings-sections">
+      <section className="settings-section">
+        <h4 className="settings-section-title">Profiles</h4>
+        <p className="settings-description">
+          Profiles capture theme, audio, player, and behavior settings so you can switch between setups quickly.
+        </p>
+        <div className="settings-row">
+          <span className="settings-row-label">Save current as profile</span>
+          <button
+            type="button"
+            className="secondary-button settings-row-action"
+            onClick={() => {
+              setNewThemeProfileName("");
+              setIsSavingThemeProfile(true);
+            }}
+          >
+            Save
+          </button>
+        </div>
+        {isSavingThemeProfile && (
+          <div
+            className="settings-section"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Save profile"
+          >
+            <div className="form">
+              <label>
+                Name
+                <input
+                  type="text"
+                  value={newThemeProfileName}
+                  onChange={(event) => setNewThemeProfileName(event.target.value)}
+                  autoFocus
+                />
+              </label>
+              <div className="form-actions">
+                <button
+                  type="button"
+                  className="primary-button"
+                  onClick={() => {
+                    const trimmed = newThemeProfileName.trim();
+                    if (!trimmed) {
+                      return;
+                    }
+                    saveThemeProfile(trimmed);
+                    setIsSavingThemeProfile(false);
+                    setNewThemeProfileName("");
+                  }}
+                >
+                  Save profile
+                </button>
+                <button
+                  type="button"
+                  className="ghost-button"
+                  onClick={() => {
+                    setIsSavingThemeProfile(false);
+                    setNewThemeProfileName("");
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {profiles.length > 0 && (
+        <section className="settings-section">
+          <h4 className="settings-section-title">Saved profiles</h4>
+          <p className="settings-description">
+            Apply a profile to switch theme, audio, player, and behavior settings in one step.
+          </p>
+          <div className="settings-theme-profiles-list">
+            {profiles.map((profile) => (
+              <div key={(profile as any).name ?? profile.mode} className="settings-row">
+                <span className="settings-row-label">
+                  {(profile as any).name ?? "Profile"}
+                </span>
+                <div className="settings-theme-toggle">
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => applyThemeProfile((profile as any).name ?? "")}
+                  >
+                    Apply
+                  </button>
+                  <button
+                    type="button"
+                    className="ghost-button"
+                    onClick={() => deleteThemeProfile((profile as any).name ?? "")}
+                    aria-label={`Delete profile ${(profile as any).name ?? ""}`}
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 
@@ -417,7 +617,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
           <span className="settings-row-label">EQ</span>
           <button
             type="button"
-            className={eqEnabled ? "primary-button" : "secondary-button"}
+            className={`${eqEnabled ? "primary-button" : "secondary-button"} settings-row-action`}
             onClick={() => setEqEnabled(!eqEnabled)}
             aria-pressed={eqEnabled}
           >
@@ -481,6 +681,26 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
         <p className="settings-description">
           Presets are applied per device and work best with the crossfade audio engine.
         </p>
+        <div className="settings-row">
+          <span className="settings-row-label">Advanced controls</span>
+          <button
+            type="button"
+            className={`${showAdvancedEq ? "primary-button" : "secondary-button"} settings-row-action`}
+            onClick={() => setShowAdvancedEq(!showAdvancedEq)}
+            aria-pressed={showAdvancedEq}
+          >
+            {showAdvancedEq ? "Hide" : "Show"}
+          </button>
+        </div>
+        {showAdvancedEq && (
+          <EqAdvancedGraph
+            bands={eqBands}
+            onChangeBands={setEqBands}
+            onResetToPreset={() => {
+              setEqPresetId(eqPresetId);
+            }}
+          />
+        )}
       </section>
     </div>
   );
@@ -524,6 +744,71 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
         <p className="settings-description">
           Manage history and storage for this browser.
         </p>
+        <div className="settings-row">
+          <span className="settings-row-label">Export settings</span>
+          <button
+            type="button"
+            className="secondary-button settings-row-action"
+            onClick={() => {
+              const json = exportSettingsToJson();
+              const blob = new Blob([json], { type: "application/json" });
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement("a");
+              link.href = url;
+              link.download = "music-settings.json";
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              URL.revokeObjectURL(url);
+            }}
+          >
+            Download JSON
+          </button>
+        </div>
+        <p className="settings-description">
+          Saves theme, audio settings, player preferences, and library structure (folders and playlists) to a JSON file.
+        </p>
+        <div className="settings-row">
+          <span className="settings-row-label">Import settings</span>
+          <button
+            type="button"
+            className="secondary-button settings-row-action"
+            disabled={isImportingSettings}
+            onClick={() => {
+              setIsImportingSettings(true);
+              if (fileInputRef.current) {
+                fileInputRef.current.click();
+              }
+            }}
+          >
+            Choose file
+          </button>
+        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/json"
+          style={{ display: "none" }}
+          onChange={async (event) => {
+            const file = event.target.files?.[0];
+            if (!file) {
+              setIsImportingSettings(false);
+              return;
+            }
+            try {
+              const text = await file.text();
+              await importSettingsFromJson(text);
+            } catch {
+              // ignore invalid files
+            } finally {
+              setIsImportingSettings(false);
+              event.target.value = "";
+            }
+          }}
+        />
+        <p className="settings-description">
+          Imports settings from a JSON file created by Music on this device. Tracks and audio files are not included.
+        </p>
         <div className="modal-danger-zone">
           <div className="settings-row">
             <span className="settings-row-label">Play history</span>
@@ -537,6 +822,23 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
           </div>
           <p className="settings-description">
             Removes all play history and resets Wrapped. This cannot be undone.
+          </p>
+          <div className="settings-row">
+            <span className="settings-row-label">Delete unused tracks</span>
+            <button
+              type="button"
+              className={confirmDeleteUnusedTracks ? "danger-button settings-row-action" : "secondary-button settings-row-action"}
+              onClick={handleDeleteUnusedTracks}
+            >
+              {confirmDeleteUnusedTracks
+                ? lastUnusedDeleteCount != null && lastUnusedDeleteCount > 0
+                  ? `Click again to delete ${lastUnusedDeleteCount} track${lastUnusedDeleteCount === 1 ? "" : "s"}`
+                  : "Click again to delete"
+                : "Delete unused tracks"}
+            </button>
+          </div>
+          <p className="settings-description">
+            Removes tracks that are not in any playlist and not in the current queue. This cannot be undone.
           </p>
           <div className="settings-row">
             <span className="settings-row-label">Delete all website data</span>
@@ -579,13 +881,86 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
     </div>
   );
 
+  const renderPlayerTab = () => (
+    <div className="settings-sections">
+      <section className="settings-section">
+        <h4 className="settings-section-title">Playback behavior</h4>
+        <div className="settings-row">
+          <span className="settings-row-label">Default shuffle</span>
+          <button
+            type="button"
+            className={`${shuffle ? "primary-button" : "secondary-button"} settings-row-action`}
+            onClick={() => setShuffle(!shuffle)}
+            aria-pressed={shuffle}
+          >
+            {shuffle ? "On" : "Off"}
+          </button>
+        </div>
+        <p className="settings-description">
+          Controls whether new queues start in shuffle mode by default.
+        </p>
+        <div className="settings-row">
+          <span className="settings-row-label">Default repeat mode</span>
+          <div className="settings-theme-toggle">
+            <button
+              type="button"
+              className={repeat === "off" ? "primary-button" : "secondary-button"}
+              onClick={() => setRepeat("off")}
+            >
+              Off
+            </button>
+            <button
+              type="button"
+              className={repeat === "queue" ? "primary-button" : "secondary-button"}
+              onClick={() => setRepeat("queue")}
+            >
+              Queue
+            </button>
+            <button
+              type="button"
+              className={repeat === "track" ? "primary-button" : "secondary-button"}
+              onClick={() => setRepeat("track")}
+            >
+              Track
+            </button>
+          </div>
+        </div>
+        <p className="settings-description">
+          New listening sessions use this repeat mode unless you change it in the player.
+        </p>
+        <div className="settings-row">
+          <span className="settings-row-label">Resume playback on app load</span>
+          <button
+            type="button"
+            className={`${autoPlayOnLoad ? "primary-button" : "secondary-button"} settings-row-action`}
+            onClick={() => {
+              const next = !autoPlayOnLoad;
+              setAutoPlayOnLoadState(next);
+              setAutoPlayOnLoad(next);
+            }}
+            aria-pressed={autoPlayOnLoad}
+          >
+            {autoPlayOnLoad ? "On" : "Off"}
+          </button>
+        </div>
+        <p className="settings-description">
+          When on, the last track and position resume automatically when you open Music.
+        </p>
+      </section>
+    </div>
+  );
+
   let content: JSX.Element;
   if (activeTab === "general") {
     content = renderGeneralTab();
   } else if (activeTab === "appearance") {
     content = renderAppearanceTab();
+  } else if (activeTab === "profiles") {
+    content = renderProfilesTab();
   } else if (activeTab === "audio") {
     content = renderAudioTab();
+  } else if (activeTab === "player") {
+    content = renderPlayerTab();
   } else if (activeTab === "data") {
     content = renderDataTab();
   } else {

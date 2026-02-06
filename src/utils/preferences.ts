@@ -1,5 +1,6 @@
 const EXPAND_PLAYLISTS_ON_FOLDER_PLAY_KEY = "settings-expand-playlists-on-folder-play";
 const TELEMETRY_ENABLED_KEY = "settings-telemetry-enabled";
+const AUTO_PLAY_ON_LOAD_KEY = "settings-auto-play-on-load";
 
 export function getExpandPlaylistsOnFolderPlay(): boolean {
   try {
@@ -32,6 +33,24 @@ export function getTelemetryEnabled(): boolean {
 export function setTelemetryEnabled(value: boolean): void {
   try {
     localStorage.setItem(TELEMETRY_ENABLED_KEY, String(value));
+  } catch {
+    // ignore
+  }
+}
+
+export function getAutoPlayOnLoad(): boolean {
+  try {
+    const raw = localStorage.getItem(AUTO_PLAY_ON_LOAD_KEY);
+    if (raw == null) return true;
+    return raw === "true";
+  } catch {
+    return true;
+  }
+}
+
+export function setAutoPlayOnLoad(value: boolean): void {
+  try {
+    localStorage.setItem(AUTO_PLAY_ON_LOAD_KEY, String(value));
   } catch {
     // ignore
   }
