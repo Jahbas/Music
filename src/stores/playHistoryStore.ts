@@ -10,9 +10,12 @@ export type WrappedStats = {
   year: number | null;
 };
 
+const MAX_IN_MEMORY_ENTRIES = 1000;
+
 type PlayHistoryState = {
   entries: PlayHistoryEntry[];
   isLoading: boolean;
+  statsCache: Record<string, WrappedStats>;
   hydrate: () => Promise<void>;
   addPlay: (trackId: string, playedAt: number, listenedSeconds: number) => Promise<void>;
   getStats: (tracks: Track[], year: number | null) => WrappedStats;
@@ -22,6 +25,7 @@ type PlayHistoryState = {
 export const usePlayHistoryStore = create<PlayHistoryState>((set, get) => ({
   entries: [],
   isLoading: true,
+  statsCache: {},
   hydrate: async () => {
     const profileId = useProfileStore.getState().currentProfileId;
     const profiles = useProfileStore.getState().profiles;
@@ -29,34 +33,50 @@ export const usePlayHistoryStore = create<PlayHistoryState>((set, get) => ({
     const oldestProfile = sortedByCreated[0] ?? null;
     const defaultProfileId = oldestProfile?.id ?? profiles[0]?.id;
     const secondProfileCreatedAt = sortedByCreated[1]?.createdAt ?? Infinity;
-    let entries = await playHistoryDb.getAll();
-    const toMigrate = entries.filter((e) => e.profileId == null);
-    if (toMigrate.length > 0 && defaultProfileId) {
-      for (const e of toMigrate) {
-        const updated = { ...e, profileId: defaultProfileId };
-        await playHistoryDb.put(updated);
+
+    const allEntries = await playHistoryDb.getAll();
+
+    let migratedEntries = allEntries;
+
+    if (defaultProfileId) {
+      const needsProfileId = migratedEntries.some((e) => e.profileId == null);
+      if (needsProfileId) {
+        migratedEntries = migratedEntries.map((e) =>
+          e.profileId == null ? { ...e, profileId: defaultProfileId } : e
+        );
       }
-      entries = await playHistoryDb.getAll();
     }
-    if (oldestProfile && entries.length > 0) {
-      const wronglyAssigned = entries.filter(
+
+    if (oldestProfile && migratedEntries.length > 0) {
+      const secondCreated = secondProfileCreatedAt;
+      const needsReassign = migratedEntries.some(
         (e) =>
           e.profileId != null &&
           e.profileId !== oldestProfile.id &&
-          e.playedAt < secondProfileCreatedAt
+          e.playedAt < secondCreated
       );
-      for (const e of wronglyAssigned) {
-        await playHistoryDb.put({ ...e, profileId: oldestProfile.id });
-      }
-      if (wronglyAssigned.length > 0) {
-        entries = await playHistoryDb.getAll();
+      if (needsReassign) {
+        migratedEntries = migratedEntries.map((e) =>
+          e.profileId != null &&
+          e.profileId !== oldestProfile.id &&
+          e.playedAt < secondCreated
+            ? { ...e, profileId: oldestProfile.id }
+            : e
+        );
       }
     }
+
+    if (migratedEntries !== allEntries) {
+      await playHistoryDb.putMany(migratedEntries);
+    }
+
     const filtered = profileId
-      ? entries.filter((e) => (e.profileId ?? defaultProfileId) === profileId)
+      ? migratedEntries.filter((e) => (e.profileId ?? defaultProfileId) === profileId)
       : [];
     filtered.sort((a, b) => a.playedAt - b.playedAt);
-    set({ entries: filtered, isLoading: false });
+    const limited = filtered.slice(-MAX_IN_MEMORY_ENTRIES);
+
+    set({ entries: limited, isLoading: false, statsCache: {} });
   },
   addPlay: async (trackId, playedAt, listenedSeconds) => {
     if (listenedSeconds <= 0) return;
@@ -70,46 +90,64 @@ export const usePlayHistoryStore = create<PlayHistoryState>((set, get) => ({
       profileId,
     };
     await playHistoryDb.add(entry);
-    set((state) => ({
-      entries: [...state.entries, entry].sort((a, b) => a.playedAt - b.playedAt),
-    }));
+    set((state) => {
+      const merged = [...state.entries, entry].sort((a, b) => a.playedAt - b.playedAt);
+      const limited = merged.slice(-MAX_IN_MEMORY_ENTRIES);
+      return {
+        entries: limited,
+        statsCache: {},
+      };
+    });
   },
   getStats: (tracks, year) => {
-    const { entries } = get();
+    const { entries, statsCache } = get();
+    const key = year === null ? "all" : String(year);
+    const cached = statsCache[key];
+    if (cached) {
+      return cached;
+    }
+
     const trackMap = new Map(tracks.map((t) => [t.id, t]));
-    const filtered = year === null
-      ? entries
-      : entries.filter((e) => new Date(e.playedAt).getFullYear() === year);
+    const filtered =
+      year === null
+        ? entries
+        : entries.filter((e) => new Date(e.playedAt).getFullYear() === year);
 
     const totalSeconds = filtered.reduce((sum, e) => sum + e.listenedSeconds, 0);
 
     const byTrack = new Map<string, { seconds: number; plays: number }>();
+    const byArtist = new Map<string, { seconds: number; plays: number }>();
+
     for (const e of filtered) {
-      const cur = byTrack.get(e.trackId) ?? { seconds: 0, plays: 0 };
-      cur.seconds += e.listenedSeconds;
-      cur.plays += 1;
-      byTrack.set(e.trackId, cur);
+      const track = trackMap.get(e.trackId);
+      const artist = track?.artist ?? "Unknown Artist";
+
+      const trackAgg = byTrack.get(e.trackId) ?? { seconds: 0, plays: 0 };
+      trackAgg.seconds += e.listenedSeconds;
+      trackAgg.plays += 1;
+      byTrack.set(e.trackId, trackAgg);
+
+      const artistAgg = byArtist.get(artist) ?? { seconds: 0, plays: 0 };
+      artistAgg.seconds += e.listenedSeconds;
+      artistAgg.plays += 1;
+      byArtist.set(artist, artistAgg);
     }
+
     const topTrackIds = Array.from(byTrack.entries())
       .map(([trackId, data]) => ({ trackId, ...data }))
       .sort((a, b) => b.seconds - a.seconds)
       .slice(0, 50);
 
-    const byArtist = new Map<string, { seconds: number; plays: number }>();
-    for (const e of filtered) {
-      const track = trackMap.get(e.trackId);
-      const artist = track?.artist ?? "Unknown Artist";
-      const cur = byArtist.get(artist) ?? { seconds: 0, plays: 0 };
-      cur.seconds += e.listenedSeconds;
-      cur.plays += 1;
-      byArtist.set(artist, cur);
-    }
     const topArtists = Array.from(byArtist.entries())
       .map(([artist, data]) => ({ artist, ...data }))
       .sort((a, b) => b.seconds - a.seconds)
       .slice(0, 50);
 
-    return { totalSeconds, topTrackIds, topArtists, year };
+    const stats: WrappedStats = { totalSeconds, topTrackIds, topArtists, year };
+    set((state) => ({
+      statsCache: { ...state.statsCache, [key]: stats },
+    }));
+    return stats;
   },
   clearPlayHistory: async () => {
     const profileId = useProfileStore.getState().currentProfileId;
@@ -119,6 +157,6 @@ export const usePlayHistoryStore = create<PlayHistoryState>((set, get) => ({
     for (const e of toRemove) {
       await playHistoryDb.remove(e.id);
     }
-    set({ entries: [] });
+    set({ entries: [], statsCache: {} });
   },
 }));

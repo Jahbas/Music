@@ -1,7 +1,12 @@
 import { openDB, type DBSchema } from "idb";
-import type { PlayHistoryEntry, Profile, ProfileLike, Playlist, PlaylistFolder, ThemeSettings, Track } from "../types";
+import type { PlayHistoryEntry, Profile, ProfileLike, Playlist, PlaylistFolder, SharedTrack, ThemeSettings, Track } from "../types";
 
 type ImageEntry = {
+  id: string;
+  blob: Blob;
+};
+
+type AudioBlobEntry = {
   id: string;
   blob: Blob;
 };
@@ -27,6 +32,14 @@ interface SpotifyDb extends DBSchema {
     key: string;
     value: ImageEntry;
   };
+  audioBlobs: {
+    key: string;
+    value: AudioBlobEntry;
+  };
+  sharedTracks: {
+    key: string;
+    value: SharedTrack;
+  };
   theme: {
     key: string;
   value: ThemeSettings;
@@ -42,7 +55,7 @@ interface SpotifyDb extends DBSchema {
 }
 
 const DB_NAME = "spotify-like-player";
-const DB_VERSION = 6;
+const DB_VERSION = 7;
 
 const dbPromise = openDB<SpotifyDb>(DB_NAME, DB_VERSION, {
   upgrade(db, oldVersion) {
@@ -61,6 +74,12 @@ const dbPromise = openDB<SpotifyDb>(DB_NAME, DB_VERSION, {
     if (!db.objectStoreNames.contains("images")) {
       db.createObjectStore("images", { keyPath: "id" });
     }
+    if (!db.objectStoreNames.contains("audioBlobs")) {
+      db.createObjectStore("audioBlobs", { keyPath: "id" });
+    }
+    if (!db.objectStoreNames.contains("sharedTracks")) {
+      db.createObjectStore("sharedTracks", { keyPath: "id" });
+    }
     if (!db.objectStoreNames.contains("theme")) {
       db.createObjectStore("theme");
     }
@@ -76,6 +95,9 @@ const dbPromise = openDB<SpotifyDb>(DB_NAME, DB_VERSION, {
 export const trackDb = {
   async getAll() {
     return (await dbPromise).getAll("tracks");
+  },
+  async get(id: string) {
+    return (await dbPromise).get("tracks", id);
   },
   async putMany(tracks: Track[]) {
     const db = await dbPromise;
@@ -135,6 +157,24 @@ export const imageDb = {
   async clear() {
     const db = await dbPromise;
     const tx = db.transaction("images", "readwrite");
+    await tx.store.clear();
+    await tx.done;
+  },
+};
+
+export const audioBlobDb = {
+  async get(id: string) {
+    return (await dbPromise).get("audioBlobs", id);
+  },
+  async put(id: string, blob: Blob) {
+    return (await dbPromise).put("audioBlobs", { id, blob });
+  },
+  async remove(id: string) {
+    return (await dbPromise).delete("audioBlobs", id);
+  },
+  async clear() {
+    const db = await dbPromise;
+    const tx = db.transaction("audioBlobs", "readwrite");
     await tx.store.clear();
     await tx.done;
   },
@@ -200,6 +240,14 @@ export const playHistoryDb = {
   async getAll() {
     return (await dbPromise).getAll("playHistory");
   },
+  async putMany(entries: PlayHistoryEntry[]) {
+    const db = await dbPromise;
+    const tx = db.transaction("playHistory", "readwrite");
+    for (const entry of entries) {
+      tx.store.put(entry);
+    }
+    await tx.done;
+  },
   async add(entry: PlayHistoryEntry) {
     return (await dbPromise).put("playHistory", entry);
   },
@@ -242,6 +290,35 @@ export const profileLikesDb = {
   async clear() {
     const db = await dbPromise;
     const tx = db.transaction("profileLikes", "readwrite");
+    await tx.store.clear();
+    await tx.done;
+  },
+};
+
+export const sharedTrackDb = {
+  async getAll() {
+    return (await dbPromise).getAll("sharedTracks");
+  },
+  async get(id: string) {
+    return (await dbPromise).get("sharedTracks", id);
+  },
+  async putMany(tracks: SharedTrack[]) {
+    const db = await dbPromise;
+    const tx = db.transaction("sharedTracks", "readwrite");
+    for (const track of tracks) {
+      tx.store.put(track);
+    }
+    await tx.done;
+  },
+  async put(track: SharedTrack) {
+    return (await dbPromise).put("sharedTracks", track);
+  },
+  async remove(id: string) {
+    return (await dbPromise).delete("sharedTracks", id);
+  },
+  async clear() {
+    const db = await dbPromise;
+    const tx = db.transaction("sharedTracks", "readwrite");
     await tx.store.clear();
     await tx.done;
   },

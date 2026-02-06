@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTelemetryStore } from "../stores/telemetryStore";
 import type { TelemetrySession, TelemetrySnapshot } from "../stores/telemetryStore";
+import { getTelemetryEnabled, setTelemetryEnabled } from "../utils/preferences";
 
 function formatDurationMs(ms: number): string {
   if (ms < 1000) return `${Math.round(ms)} ms`;
@@ -30,7 +31,13 @@ function formatDate(ts: number): string {
 export const TelemetryView = () => {
   const hydrate = useTelemetryStore((s) => s.hydrate);
   const getSnapshot = useTelemetryStore((s) => s.getSnapshot);
+  const recordVisit = useTelemetryStore((s) => s.recordVisit);
+  const startSession = useTelemetryStore((s) => s.startSession);
+  const endSession = useTelemetryStore((s) => s.endSession);
+  const clearAll = useTelemetryStore((s) => s.clearAll);
   const [exportCopied, setExportCopied] = useState(false);
+  const [telemetryEnabled, setTelemetryEnabledState] = useState(getTelemetryEnabled());
+  const [confirmClearTelemetry, setConfirmClearTelemetry] = useState(false);
 
   useEffect(() => {
     hydrate();
@@ -58,6 +65,30 @@ export const TelemetryView = () => {
     [snapshot.sessions]
   );
 
+  const handleToggleTelemetry = () => {
+    const next = !telemetryEnabled;
+    if (next) {
+      setTelemetryEnabled(true);
+      setTelemetryEnabledState(true);
+      hydrate();
+      recordVisit();
+      startSession();
+    } else {
+      endSession();
+      setTelemetryEnabled(false);
+      setTelemetryEnabledState(false);
+    }
+  };
+
+  const handleClearTelemetry = () => {
+    if (!confirmClearTelemetry) {
+      setConfirmClearTelemetry(true);
+      return;
+    }
+    clearAll();
+    setConfirmClearTelemetry(false);
+  };
+
   return (
     <div className="wrapped-view telemetry-view">
       <div className="wrapped-header telemetry-header">
@@ -74,6 +105,36 @@ export const TelemetryView = () => {
       <p className="telemetry-intro muted">
         Visit count, session length, listening time per session, pages visited, searches, and more. Data is stored locally only.
       </p>
+
+      <div className="telemetry-controls">
+        <div className="settings-row">
+          <span className="settings-row-label">Telemetry</span>
+          <button
+            type="button"
+            className={telemetryEnabled ? "primary-button" : "secondary-button"}
+            onClick={handleToggleTelemetry}
+            aria-pressed={telemetryEnabled}
+          >
+            {telemetryEnabled ? "On" : "Off"}
+          </button>
+        </div>
+        <p className="telemetry-intro muted">
+          When on, records visits, sessions, listening time, pages, searches, and player actions. All data stays in your browser.
+        </p>
+        <div className="settings-row">
+          <span className="settings-row-label">Clear telemetry data</span>
+          <button
+            type="button"
+            className={confirmClearTelemetry ? "danger-button settings-row-action" : "secondary-button settings-row-action"}
+            onClick={handleClearTelemetry}
+          >
+            {confirmClearTelemetry ? "Click again to clear" : "Clear telemetry"}
+          </button>
+        </div>
+        <p className="telemetry-intro muted">
+          Clears all stored telemetry sessions and visit counters. This cannot be undone.
+        </p>
+      </div>
 
       <div className="telemetry-grid">
         <div className="wrapped-hero">

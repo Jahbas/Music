@@ -7,11 +7,27 @@ export type Track = {
   album: string;
   duration: number;
   addedAt: number;
+  year?: number;
+  tags?: string[];
   sourceType: TrackSourceType;
   fileBlob?: Blob;
   fileHandle?: FileSystemFileHandle;
   artworkId?: string;
   liked?: boolean;
+};
+
+export type SharedTrack = {
+  id: string;
+  originalTrackId?: string;
+  title: string;
+  artist: string;
+  album: string;
+  duration: number;
+  sizeBytes: number;
+  mimeType: string;
+  createdAt: number;
+  fromPeerLabel?: string;
+  audioBlobId: string;
 };
 
 export type Playlist = {
@@ -50,9 +66,15 @@ export type PlaylistFolder = {
 
 export type ThemeMode = "dark" | "light" | "oled";
 
+export type ThemeDensity = "cozy" | "compact";
+
+export type MotionPreference = "normal" | "reduced";
+
 export type ThemeSettings = {
   mode: ThemeMode;
   accent: string;
+  density: ThemeDensity;
+  motion: MotionPreference;
 };
 
 export type PlayHistoryEntry = {

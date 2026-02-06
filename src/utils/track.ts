@@ -29,7 +29,7 @@ export const fileToTrack = async (
   sourceType: "blob" | "handle",
   fileHandle?: FileSystemFileHandle
 ): Promise<{ track: Track; artworkBlob?: Blob }> => {
-  const { title, artist, album, duration, artworkBlob } =
+  const { title, artist, album, duration, year, artworkBlob } =
     await parseAudioMetadata(file);
   const track: Track = {
     id: crypto.randomUUID(),
@@ -38,6 +38,7 @@ export const fileToTrack = async (
     album,
     duration,
     addedAt: Date.now(),
+    year,
     sourceType,
     fileBlob: sourceType === "blob" ? file : undefined,
     fileHandle: sourceType === "handle" ? fileHandle : undefined,

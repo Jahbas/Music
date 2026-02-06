@@ -6,17 +6,22 @@ import { usePlayHistoryStore } from "../stores/playHistoryStore";
 import { useProfileLikesStore } from "../stores/profileLikesStore";
 import { usePlaylistStore } from "../stores/playlistStore";
 import { useTelemetryStore } from "../stores/telemetryStore";
+import { getTelemetryEnabled } from "../utils/preferences";
 import { CreateProfileModal } from "./CreateProfileModal";
 import { DeleteProfileModal } from "./DeleteProfileModal";
 import { SearchOverlay } from "./SearchOverlay";
-import { SettingsModal } from "./SettingsModal";
 
-export const TopBar = () => {
+type TopBarProps = {
+  isSettingsOpen: boolean;
+  onOpenSettings: () => void;
+  onCloseSettings: () => void;
+};
+
+export const TopBar = ({ isSettingsOpen, onOpenSettings, onCloseSettings }: TopBarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const [query, setQuery] = useState(searchParams.get("q") ?? "");
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isCreateProfileOpen, setIsCreateProfileOpen] = useState(false);
@@ -45,7 +50,9 @@ export const TopBar = () => {
       }
       return;
     }
-    recordSearch(trimmed);
+    if (getTelemetryEnabled()) {
+      recordSearch(trimmed);
+    }
     navigate(`/search?q=${encodeURIComponent(trimmed)}`);
     setIsSearchOverlayOpen(false);
   };
@@ -190,7 +197,7 @@ export const TopBar = () => {
       <button
         type="button"
         className="topbar-settings-button"
-        onClick={() => setIsSettingsOpen(true)}
+        onClick={isSettingsOpen ? onCloseSettings : onOpenSettings}
         title="Settings"
         aria-label="Open settings"
       >
@@ -199,7 +206,6 @@ export const TopBar = () => {
           <circle cx="12" cy="12" r="3" />
         </svg>
       </button>
-      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
       <CreateProfileModal
         isOpen={isCreateProfileOpen}
         onClose={() => setIsCreateProfileOpen(false)}

@@ -2,33 +2,77 @@ import { useEffect, useRef } from "react";
 import { useLibraryStore } from "../stores/libraryStore";
 import { usePlayerStore } from "../stores/playerStore";
 import { usePlayHistoryStore } from "../stores/playHistoryStore";
+import { useAudioSettingsStore } from "../stores/audioSettingsStore";
+import { audioBlobDb, trackDb } from "../db/db";
+import { useSharedTracksStore } from "../stores/sharedTracksStore";
 
 const getTrackUrl = async (trackId: string | null) => {
   if (!trackId) {
     return null;
   }
-  const track = useLibraryStore
+  const trackInStore = useLibraryStore
     .getState()
     .tracks.find((item) => item.id === trackId);
-  if (!track) {
-    return null;
+
+  const sourceType = trackInStore?.sourceType;
+
+  if (sourceType === "blob") {
+    const dbTrack = await trackDb.get(trackId);
+    if (!dbTrack || !dbTrack.fileBlob) {
+      return null;
+    }
+    return URL.createObjectURL(dbTrack.fileBlob);
   }
-  if (track.sourceType === "blob" && track.fileBlob) {
-    return URL.createObjectURL(track.fileBlob);
-  }
-  if (track.sourceType === "handle" && track.fileHandle) {
+
+  if (sourceType === "handle" && trackInStore?.fileHandle) {
     try {
-      const file = await track.fileHandle.getFile();
+      const file = await trackInStore.fileHandle.getFile();
       return URL.createObjectURL(file);
     } catch {
       return null;
     }
   }
+
+  const sharedState = useSharedTracksStore.getState();
+  const sharedTrack =
+    sharedState.tracks.find((t) => t.originalTrackId === trackId || t.id === trackId) ?? null;
+  if (sharedTrack) {
+    if (sharedTrack.audioBlob) {
+      return URL.createObjectURL(sharedTrack.audioBlob);
+    }
+    const blobEntry = await audioBlobDb.get(sharedTrack.audioBlobId);
+    if (!blobEntry) {
+      return null;
+    }
+    return URL.createObjectURL(blobEntry.blob);
+  }
+
   return null;
 };
 
+type Lane = {
+  audio: HTMLAudioElement;
+  source: MediaElementAudioSourceNode;
+  gain: GainNode;
+  filters: BiquadFilterNode[];
+  currentUrl: string | null;
+};
+
+let sharedAudioContext: AudioContext | null = null;
+
+function getAudioContext(): AudioContext {
+  if (!sharedAudioContext) {
+    sharedAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+  }
+  return sharedAudioContext;
+}
+
 export const useAudio = () => {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const lanesRef = useRef<{ a: Lane | null; b: Lane | null }>({ a: null, b: null });
+  const activeLaneRef = useRef<"a" | "b">("a");
+  const crossfadeTimeoutRef = useRef<number | null>(null);
+  const isCrossfadingRef = useRef(false);
+  const ignoreOnEndedRef = useRef(false);
   const previousPlayRef = useRef<{ trackId: string; startedAt: number } | null>(null);
   const currentTrackId = usePlayerStore((state) => state.currentTrackId);
   const isPlaying = usePlayerStore((state) => state.isPlaying);
@@ -39,22 +83,112 @@ export const useAudio = () => {
   const setDuration = usePlayerStore((state) => state.setDuration);
   const next = usePlayerStore((state) => state.next);
   const addPlay = usePlayHistoryStore((state) => state.addPlay);
+  const { crossfadeEnabled, crossfadeMs, eqEnabled, eqBands } = useAudioSettingsStore();
+
+  const applyEqToLane = (lane: Lane) => {
+    const ctx = getAudioContext();
+
+    try {
+      lane.source.disconnect();
+    } catch {
+    }
+
+    try {
+      lane.gain.disconnect();
+    } catch {
+    }
+
+    for (const filter of lane.filters) {
+      try {
+        filter.disconnect();
+      } catch {
+      }
+    }
+
+    lane.filters = [];
+
+    if (!eqEnabled || eqBands.length === 0) {
+      lane.source.connect(lane.gain);
+      lane.gain.connect(ctx.destination);
+      return;
+    }
+
+    const filters = eqBands.map((band) => {
+      const filter = ctx.createBiquadFilter();
+      filter.type = "peaking";
+      filter.frequency.value = band.frequency;
+      filter.gain.value = band.gain;
+      filter.Q.value = band.q;
+      return filter;
+    });
+
+    lane.source.connect(filters[0]);
+    for (let index = 0; index < filters.length - 1; index += 1) {
+      filters[index].connect(filters[index + 1]);
+    }
+    filters[filters.length - 1].connect(lane.gain);
+    lane.gain.connect(ctx.destination);
+    lane.filters = filters;
+  };
+
+  const ensureLane = (key: "a" | "b"): Lane => {
+    const existing = lanesRef.current[key];
+    if (existing) {
+      return existing;
+    }
+    const ctx = getAudioContext();
+    const audio = new Audio();
+    audio.crossOrigin = "anonymous";
+    const source = ctx.createMediaElementSource(audio);
+    const gain = ctx.createGain();
+    source.connect(gain);
+    gain.connect(ctx.destination);
+
+    const lane: Lane = { audio, source, gain, filters: [], currentUrl: null };
+    if (eqEnabled && eqBands.length > 0) {
+      applyEqToLane(lane);
+    }
+    lanesRef.current[key] = lane;
+    return lane;
+  };
+
+  const getActiveLane = () => ensureLane(activeLaneRef.current);
+  const getInactiveLane = () => ensureLane(activeLaneRef.current === "a" ? "b" : "a");
 
   useEffect(() => {
-    if (!audioRef.current) {
-      audioRef.current = new Audio();
+    const laneA = ensureLane("a");
+    applyEqToLane(laneA);
+
+    if (crossfadeEnabled) {
+      const laneB = ensureLane("b");
+      applyEqToLane(laneB);
     }
-    const audio = audioRef.current;
-    audio.volume = volume;
-    audio.playbackRate = playbackRate;
-  }, [volume, playbackRate]);
+  }, [eqEnabled, eqBands, crossfadeEnabled]);
+
+  useEffect(() => {
+    const laneA = ensureLane("a");
+    laneA.audio.volume = volume;
+    laneA.audio.playbackRate = playbackRate;
+
+    if (crossfadeEnabled) {
+      const laneB = ensureLane("b");
+      laneB.audio.volume = volume;
+      laneB.audio.playbackRate = playbackRate;
+    } else if (lanesRef.current.b) {
+      const laneB = lanesRef.current.b;
+      if (laneB.currentUrl) {
+        URL.revokeObjectURL(laneB.currentUrl);
+        laneB.currentUrl = null;
+      }
+      laneB.audio.pause();
+      lanesRef.current.b = null;
+    }
+  }, [volume, playbackRate, crossfadeEnabled]);
 
   const timeupdateThrottleRef = useRef<number>(0);
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) {
-      return;
-    }
+    const lane = getActiveLane();
+    const audio = lane.audio;
     const THROTTLE_MS = 100;
     audio.ontimeupdate = () => {
       const now = performance.now();
@@ -69,6 +203,13 @@ export const useAudio = () => {
       setDuration(audio.duration || 0);
     };
     audio.onended = () => {
+      if (ignoreOnEndedRef.current) {
+        ignoreOnEndedRef.current = false;
+        return;
+      }
+      if (crossfadeEnabled && isCrossfadingRef.current) {
+        return;
+      }
       const repeat = usePlayerStore.getState().repeat;
       if (repeat === "track") {
         audio.currentTime = 0;
@@ -77,14 +218,13 @@ export const useAudio = () => {
       }
       next();
     };
-  }, [next, setCurrentTime, setDuration]);
+  }, [next, setCurrentTime, setDuration, crossfadeEnabled]);
 
   useEffect(() => {
-    let currentUrl: string | null = null;
-    const audio = audioRef.current;
-    if (!audio) {
-      return;
-    }
+    let cancelled = false;
+    const lane = getActiveLane();
+    const audio = lane.audio;
+
     const prev = previousPlayRef.current;
     if (prev && prev.trackId !== currentTrackId) {
       const listenedSeconds = Math.floor(audio.currentTime || 0);
@@ -99,38 +239,56 @@ export const useAudio = () => {
 
     const loadTrack = async () => {
       const url = await getTrackUrl(currentTrackId);
-      if (!url) {
+      if (!url || cancelled) {
         return;
       }
-      currentUrl = url;
+      if (lane.currentUrl) {
+        URL.revokeObjectURL(lane.currentUrl);
+      }
+      lane.currentUrl = url;
       audio.src = url;
       audio.load();
       if (isPlaying) {
-        void audio.play();
+        try {
+          const ctx = getAudioContext();
+          if (ctx.state === "suspended") {
+            void ctx.resume();
+          }
+          await audio.play();
+        } catch {
+        }
       }
     };
     void loadTrack();
+
     return () => {
-      if (currentUrl) {
-        URL.revokeObjectURL(currentUrl);
-      }
+      cancelled = true;
     };
-  }, [currentTrackId, addPlay]);
+  }, [currentTrackId, isPlaying, addPlay]);
 
   useEffect(() => {
-    const audio = audioRef.current;
+    const lane = getActiveLane();
+    const audio = lane.audio;
     if (!audio) {
       return;
     }
     if (isPlaying) {
-      void audio.play();
+      try {
+        const ctx = getAudioContext();
+        if (ctx.state === "suspended") {
+          void ctx.resume();
+        }
+        void audio.play();
+      } catch {
+      }
     } else {
       audio.pause();
     }
   }, [isPlaying]);
 
   useEffect(() => {
-    const audio = audioRef.current;
+    const lane = getActiveLane();
+    const audio = lane.audio;
     if (!audio) {
       return;
     }
@@ -139,5 +297,119 @@ export const useAudio = () => {
     }
   }, [currentTime]);
 
-  return audioRef;
+  useEffect(() => {
+    if (!crossfadeEnabled || crossfadeMs <= 0) {
+      return;
+    }
+    const lane = getActiveLane();
+    const audio = lane.audio;
+    const ctx = getAudioContext();
+
+    const checkAndSchedule = () => {
+      if (isCrossfadingRef.current) {
+        return;
+      }
+      if (!crossfadeEnabled || !audio.duration || !currentTrackId) {
+        return;
+      }
+      const remaining = (audio.duration - audio.currentTime) * 1000;
+      const fadeMs = Math.min(crossfadeMs, remaining);
+      if (fadeMs <= 0) return;
+
+      const state = usePlayerStore.getState();
+      const { queue, currentTrackId: activeId, isPlaying: playing } = state;
+      if (!playing || !activeId) return;
+      const index = queue.indexOf(activeId);
+      const nextId = index >= 0 ? queue[index + 1] : null;
+      if (!nextId) return;
+
+      const inactive = getInactiveLane();
+
+      const startCrossfade = async () => {
+        isCrossfadingRef.current = true;
+        ignoreOnEndedRef.current = true;
+        const url = await getTrackUrl(nextId);
+        if (!url) {
+          isCrossfadingRef.current = false;
+          return;
+        }
+        if (inactive.currentUrl) {
+          URL.revokeObjectURL(inactive.currentUrl);
+        }
+        inactive.currentUrl = url;
+        inactive.audio.src = url;
+        inactive.audio.load();
+        inactive.audio.currentTime = 0;
+        inactive.gain.gain.setValueAtTime(0, ctx.currentTime);
+        try {
+          if (ctx.state === "suspended") {
+            await ctx.resume();
+          }
+          await inactive.audio.play();
+        } catch {
+          isCrossfadingRef.current = false;
+          return;
+        }
+
+        const fadeSeconds = fadeMs / 1000;
+        lane.gain.gain.cancelScheduledValues(ctx.currentTime);
+        inactive.gain.gain.cancelScheduledValues(ctx.currentTime);
+        lane.gain.gain.setValueAtTime(lane.gain.gain.value, ctx.currentTime);
+        inactive.gain.gain.setValueAtTime(0, ctx.currentTime);
+        lane.gain.gain.linearRampToValueAtTime(0, ctx.currentTime + fadeSeconds);
+        inactive.gain.gain.linearRampToValueAtTime(1, ctx.currentTime + fadeSeconds);
+
+        setTimeout(() => {
+          lane.audio.pause();
+          if (lane.currentUrl) {
+            URL.revokeObjectURL(lane.currentUrl);
+            lane.currentUrl = null;
+          }
+          activeLaneRef.current = activeLaneRef.current === "a" ? "b" : "a";
+          const playerState = usePlayerStore.getState();
+          playerState.setCurrentTime(inactive.audio.currentTime || 0);
+          playerState.setDuration(inactive.audio.duration || 0);
+          usePlayerStore.setState({
+            currentTrackId: nextId,
+            isPlaying: true,
+          });
+          isCrossfadingRef.current = false;
+        }, fadeMs + 100);
+      };
+
+      if (crossfadeTimeoutRef.current != null) {
+        window.clearTimeout(crossfadeTimeoutRef.current);
+      }
+      crossfadeTimeoutRef.current = window.setTimeout(startCrossfade, remaining - fadeMs);
+    };
+
+    const id = window.setInterval(checkAndSchedule, 500);
+    return () => {
+      window.clearInterval(id);
+      if (crossfadeTimeoutRef.current != null) {
+        window.clearTimeout(crossfadeTimeoutRef.current);
+        crossfadeTimeoutRef.current = null;
+      }
+      isCrossfadingRef.current = false;
+    };
+  }, [crossfadeEnabled, crossfadeMs, currentTrackId]);
+
+  useEffect(() => {
+    return () => {
+      const lanes = lanesRef.current;
+      const keys: Array<"a" | "b"> = ["a", "b"];
+      for (const key of keys) {
+        const lane = lanes[key];
+        if (!lane) continue;
+        if (lane.currentUrl) {
+          URL.revokeObjectURL(lane.currentUrl);
+          lane.currentUrl = null;
+        }
+        lane.audio.pause();
+      }
+    };
+  }, []);
+
+  return null;
 };
+

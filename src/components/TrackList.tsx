@@ -22,6 +22,7 @@ type TrackListProps = {
   onToggleLike?: (trackId: string) => void;
   /** When provided, used for like state and sort-by-liked instead of track.liked (per-profile likes). */
   likedTrackIds?: string[];
+  onEditTags?: (trackId: string) => void;
 };
 
 const formatDuration = (seconds: number) => {
@@ -107,6 +108,7 @@ export const TrackList = ({
   highlightTrackId,
   onToggleLike,
   likedTrackIds,
+  onEditTags,
 }: TrackListProps) => {
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const [sortState, setSortState] = useState<{ key: SortKey; dir: SortDir } | null>(null);
@@ -698,7 +700,30 @@ export const TrackList = ({
                   : ""}
               </div>
               <div className="muted">
-                {new Date(track.addedAt).toLocaleDateString()}
+                <span>{new Date(track.addedAt).toLocaleDateString()}</span>
+                {onEditTags && (
+                  <button
+                    type="button"
+                    className="track-tags-button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onEditTags(track.id);
+                    }}
+                    title={
+                      track.tags && track.tags.length > 0
+                        ? `Tags: ${track.tags.join(", ")}`
+                        : "Add tags"
+                    }
+                    aria-label={
+                      track.tags && track.tags.length > 0
+                        ? `Edit tags: ${track.tags.join(", ")}`
+                        : "Add tags"
+                    }
+                  >
+                    #
+                  </button>
+                )}
               </div>
               <div className="track-row-col-duration">{formatDuration(track.duration)}</div>
             </div>

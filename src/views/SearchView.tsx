@@ -6,11 +6,13 @@ import { useLibraryStore } from "../stores/libraryStore";
 import { usePlayerStore } from "../stores/playerStore";
 import { usePlaylistStore } from "../stores/playlistStore";
 import { useProfileLikesStore } from "../stores/profileLikesStore";
+import { parseSearchQuery, matchesTrack } from "../utils/searchQuery";
+import { TagEditorModal } from "../components/TagEditorModal";
 
 export const SearchView = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const query = (searchParams.get("q") ?? "").toLowerCase();
+  const query = searchParams.get("q") ?? "";
   const tracks = useLibraryStore((state) => state.tracks);
   const removeTrack = useLibraryStore((state) => state.removeTrack);
   const toggleTrackLiked = useLibraryStore((state) => state.toggleTrackLiked);
@@ -20,6 +22,7 @@ export const SearchView = () => {
   const playTrack = usePlayerStore((state) => state.playTrack);
   const setQueue = usePlayerStore((state) => state.setQueue);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [tagEditorTrackId, setTagEditorTrackId] = useState<string | null>(null);
 
   const playlistNamesByTrackId = useMemo(() => {
     const map: Record<string, string[]> = {};
@@ -35,23 +38,21 @@ export const SearchView = () => {
   }, [playlists]);
 
   const filteredTracks = useMemo(() => {
-    if (!query) {
+    const trimmed = query.trim();
+    if (!trimmed) {
       return [];
     }
-    return tracks.filter(
-      (track) =>
-        track.title.toLowerCase().includes(query) ||
-        track.artist.toLowerCase().includes(query) ||
-        track.album.toLowerCase().includes(query)
-    );
+    const parsed = parseSearchQuery(trimmed);
+    return tracks.filter((track) => matchesTrack(parsed, track));
   }, [tracks, query]);
 
   const filteredPlaylists = useMemo(() => {
-    if (!query) {
+    const trimmed = query.trim().toLowerCase();
+    if (!trimmed) {
       return [];
     }
     return playlists.filter((playlist) =>
-      playlist.name.toLowerCase().includes(query)
+      playlist.name.toLowerCase().includes(trimmed)
     );
   }, [playlists, query]);
 
@@ -85,6 +86,11 @@ export const SearchView = () => {
       setSelectedIds([]);
     },
     [removeTrack]
+  );
+
+  const activeTrackForTags = useMemo(
+    () => tracks.find((t) => t.id === tagEditorTrackId) ?? null,
+    [tracks, tagEditorTrackId]
   );
 
   if (!query) {
@@ -123,6 +129,19 @@ export const SearchView = () => {
         onDeleteSelected={handleDeleteSelected}
         onToggleLike={toggleTrackLiked}
         likedTrackIds={likedTrackIds}
+        onEditTags={(trackId) => setTagEditorTrackId(trackId)}
+      />
+      <TagEditorModal
+        isOpen={tagEditorTrackId !== null && activeTrackForTags !== null}
+        onClose={() => setTagEditorTrackId(null)}
+        initialTags={activeTrackForTags?.tags ?? []}
+        onSave={async (tags) => {
+          if (!activeTrackForTags) return;
+          await useLibraryStore.getState().setTrackTags(
+            activeTrackForTags.id,
+            tags
+          );
+        }}
       />
     </div>
   );

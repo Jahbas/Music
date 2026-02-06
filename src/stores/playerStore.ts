@@ -1,12 +1,65 @@
 import { create } from "zustand";
 import { useTelemetryStore } from "./telemetryStore";
+import { getTelemetryEnabled } from "../utils/preferences";
 
 const VOLUME_STORAGE_KEY = "player-volume";
 const SHUFFLE_STORAGE_KEY = "player-shuffle";
 const PLAYBACK_RATE_STORAGE_KEY = "player-playback-rate";
 const REPEAT_STORAGE_KEY = "player-repeat";
+const PLAYER_POSITION_KEY = "player-last-position";
 
 export type RepeatMode = "off" | "queue" | "track";
+
+type StoredPlayerPosition = {
+  trackId: string;
+  currentTime: number;
+  isPlaying: boolean;
+};
+
+function getStoredPlayerPosition(): {
+  trackId: string | null;
+  currentTime: number;
+  isPlaying: boolean;
+} {
+  try {
+    const raw = localStorage.getItem(PLAYER_POSITION_KEY);
+    if (!raw) {
+      return { trackId: null, currentTime: 0, isPlaying: false };
+    }
+    const parsed = JSON.parse(raw) as Partial<StoredPlayerPosition>;
+    const trackId =
+      parsed && typeof parsed.trackId === "string" ? parsed.trackId : null;
+    const currentTime =
+      parsed && typeof parsed.currentTime === "number" && parsed.currentTime >= 0
+        ? parsed.currentTime
+        : 0;
+    const isPlaying = parsed != null && parsed.isPlaying === true;
+    return { trackId, currentTime, isPlaying };
+  } catch {
+    return { trackId: null, currentTime: 0, isPlaying: false };
+  }
+}
+
+function persistPlayerPosition(state: {
+  currentTrackId: string | null;
+  currentTime: number;
+  isPlaying: boolean;
+}): void {
+  try {
+    if (!state.currentTrackId) {
+      localStorage.removeItem(PLAYER_POSITION_KEY);
+      return;
+    }
+    const payload: StoredPlayerPosition = {
+      trackId: state.currentTrackId,
+      currentTime: state.currentTime || 0,
+      isPlaying: state.isPlaying,
+    };
+    localStorage.setItem(PLAYER_POSITION_KEY, JSON.stringify(payload));
+  } catch {
+    // ignore
+  }
+}
 
 function getStoredVolume(): number {
   try {
@@ -100,19 +153,23 @@ type PlayerState = {
   reorderQueue: (fromIndex: number, toIndex: number) => void;
 };
 
+const storedPosition = getStoredPlayerPosition();
+
 export const usePlayerStore = create<PlayerState>((set, get) => ({
-  currentTrackId: null,
+  currentTrackId: storedPosition.trackId,
   queue: [],
-  isPlaying: false,
+  isPlaying: storedPosition.isPlaying,
   shuffle: getStoredShuffle(),
   repeat: getStoredRepeat(),
   volume: getStoredVolume(),
-  currentTime: 0,
+  currentTime: storedPosition.currentTime,
   duration: 0,
   playbackRate: getStoredPlaybackRate(),
   setQueue: (queue) => set({ queue }),
   playTrack: (trackId, queue) => {
-    useTelemetryStore.getState().recordTrackPlay();
+    if (getTelemetryEnabled()) {
+      useTelemetryStore.getState().recordTrackPlay();
+    }
     if (queue && queue.length > 0) {
       const useShuffle = get().shuffle;
       const finalQueue = useShuffle
@@ -120,19 +177,41 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
         : queue;
       set({ queue: finalQueue });
     }
-    set({ currentTrackId: trackId, isPlaying: true });
+    set({ currentTrackId: trackId, isPlaying: true, currentTime: 0 });
+    persistPlayerPosition({
+      currentTrackId: trackId,
+      currentTime: 0,
+      isPlaying: true,
+    });
   },
   playTrackIds: (trackIds, options) => {
     if (trackIds.length === 0) return;
-    useTelemetryStore.getState().recordTrackPlay();
+    if (getTelemetryEnabled()) {
+      useTelemetryStore.getState().recordTrackPlay();
+    }
     const useShuffle = options?.shuffle ?? get().shuffle;
     const queue = useShuffle ? shuffleArray(trackIds) : [...trackIds];
     set({ queue });
-    set({ currentTrackId: queue[0], isPlaying: true });
+    const nextId = queue[0];
+    set({ currentTrackId: nextId, isPlaying: true, currentTime: 0 });
+    persistPlayerPosition({
+      currentTrackId: nextId,
+      currentTime: 0,
+      isPlaying: true,
+    });
   },
   togglePlay: () => {
-    useTelemetryStore.getState().recordPlayPauseToggle();
-    set({ isPlaying: !get().isPlaying });
+    if (getTelemetryEnabled()) {
+      useTelemetryStore.getState().recordPlayPauseToggle();
+    }
+    const next = !get().isPlaying;
+    set({ isPlaying: next });
+    const { currentTrackId, currentTime } = get();
+    persistPlayerPosition({
+      currentTrackId,
+      currentTime,
+      isPlaying: next,
+    });
   },
   toggleShuffle: () => {
     const next = !get().shuffle;
@@ -180,14 +259,32 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       // ignore
     }
   },
-  pause: () => set({ isPlaying: false }),
-  play: () => set({ isPlaying: true }),
+  pause: () => {
+    set({ isPlaying: false });
+    const { currentTrackId, currentTime } = get();
+    persistPlayerPosition({
+      currentTrackId,
+      currentTime,
+      isPlaying: false,
+    });
+  },
+  play: () => {
+    set({ isPlaying: true });
+    const { currentTrackId, currentTime } = get();
+    persistPlayerPosition({
+      currentTrackId,
+      currentTime,
+      isPlaying: true,
+    });
+  },
   next: () => {
     const { queue, currentTrackId, repeat } = get();
     if (!currentTrackId || queue.length === 0) {
       return;
     }
-    useTelemetryStore.getState().recordSkipNext();
+    if (getTelemetryEnabled()) {
+      useTelemetryStore.getState().recordSkipNext();
+    }
     const currentIndex = queue.indexOf(currentTrackId);
     const nextIndex = currentIndex + 1;
     if (repeat === "track") {
@@ -195,11 +292,23 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       return;
     }
     if (nextIndex < queue.length) {
-      set({ currentTrackId: queue[nextIndex], isPlaying: true });
+      const nextId = queue[nextIndex];
+      set({ currentTrackId: nextId, isPlaying: true, currentTime: 0 });
+      persistPlayerPosition({
+        currentTrackId: nextId,
+        currentTime: 0,
+        isPlaying: true,
+      });
       return;
     }
     if (repeat === "queue" && queue.length > 0) {
-      set({ currentTrackId: queue[0], isPlaying: true });
+      const nextId = queue[0];
+      set({ currentTrackId: nextId, isPlaying: true, currentTime: 0 });
+      persistPlayerPosition({
+        currentTrackId: nextId,
+        currentTime: 0,
+        isPlaying: true,
+      });
     }
   },
   previous: () => {
@@ -207,11 +316,19 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     if (!currentTrackId || queue.length === 0) {
       return;
     }
-    useTelemetryStore.getState().recordSkipPrev();
+    if (getTelemetryEnabled()) {
+      useTelemetryStore.getState().recordSkipPrev();
+    }
     const currentIndex = queue.indexOf(currentTrackId);
     const prevIndex = currentIndex - 1;
     if (prevIndex >= 0) {
-      set({ currentTrackId: queue[prevIndex], isPlaying: true });
+      const prevId = queue[prevIndex];
+      set({ currentTrackId: prevId, isPlaying: true, currentTime: 0 });
+      persistPlayerPosition({
+        currentTrackId: prevId,
+        currentTime: 0,
+        isPlaying: true,
+      });
     }
   },
   setVolume: (volume) => {
@@ -232,10 +349,24 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       // ignore
     }
   },
-  setCurrentTime: (time) => set({ currentTime: time }),
+  setCurrentTime: (time) => {
+    set({ currentTime: time });
+    const { currentTrackId, isPlaying } = get();
+    persistPlayerPosition({
+      currentTrackId,
+      currentTime: time,
+      isPlaying,
+    });
+  },
   setDuration: (duration) => set({ duration }),
-  clearQueue: () =>
-    set({ queue: [], currentTrackId: null, isPlaying: false }),
+  clearQueue: () => {
+    set({ queue: [], currentTrackId: null, isPlaying: false, currentTime: 0 });
+    persistPlayerPosition({
+      currentTrackId: null,
+      currentTime: 0,
+      isPlaying: false,
+    });
+  },
   addToQueue: (trackIds, position = "end") => {
     const { queue, currentTrackId } = get();
     if (trackIds.length === 0) return;
@@ -263,6 +394,12 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
         ? next[0] ?? null
         : currentTrackId;
     set({ queue: next, currentTrackId: nextCurrent });
+    const { currentTime, isPlaying } = get();
+    persistPlayerPosition({
+      currentTrackId: nextCurrent,
+      currentTime,
+      isPlaying,
+    });
   },
   reorderQueue: (fromIndex, toIndex) => {
     const { queue } = get();

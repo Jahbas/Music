@@ -3,19 +3,20 @@ import { Outlet, useNavigate } from "react-router-dom";
 import { useAudio } from "../hooks/useAudio";
 import { useLibraryStore } from "../stores/libraryStore";
 import { usePlayHistoryStore } from "../stores/playHistoryStore";
-import { usePlayerStore } from "../stores/playerStore";
 import { usePlaylistStore } from "../stores/playlistStore";
 import { useProfileStore } from "../stores/profileStore";
 import { useFolderStore } from "../stores/folderStore";
 import { useProfileLikesStore } from "../stores/profileLikesStore";
 import { useThemeStore } from "../stores/themeStore";
 import { useTelemetry } from "../hooks/useTelemetry";
+import { useShortcuts } from "../hooks/useShortcuts";
 import { AddSongsProgress } from "./AddSongsProgress";
 import { DragAddToPlaylistOverlay } from "./DragAddToPlaylistOverlay";
 import { PlayerBar } from "./PlayerBar";
 import { QueuePanel } from "./QueuePanel";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
+import { SettingsModal } from "./SettingsModal";
 
 export const Layout = () => {
   const navigate = useNavigate();
@@ -28,9 +29,15 @@ export const Layout = () => {
   const hydrateProfileLikes = useProfileLikesStore((state) => state.hydrate);
   useAudio();
   useTelemetry();
+  useShortcuts();
 
   const [draggingTrackIds, setDraggingTrackIds] = useState<string[]>([]);
   const [queuePanelOpen, setQueuePanelOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  useEffect(() => {
+    if (settingsOpen) setQueuePanelOpen(false);
+  }, [settingsOpen]);
 
   useEffect(() => {
     void hydrateTheme();
@@ -42,38 +49,17 @@ export const Layout = () => {
       await hydratePlayHistory();
       await hydrateProfileLikes();
     })();
-  }, [hydrateTheme, hydrateLibrary, hydratePlaylists, hydrateProfiles, hydrateFolders, hydratePlayHistory, hydrateProfileLikes]);
+  }, [
+    hydrateTheme,
+    hydrateLibrary,
+    hydratePlaylists,
+    hydrateProfiles,
+    hydrateFolders,
+    hydratePlayHistory,
+    hydrateProfileLikes,
+  ]);
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement;
-      const isInput =
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.isContentEditable;
-      if (isInput) return;
-
-      if (event.code === "Space") {
-        event.preventDefault();
-        usePlayerStore.getState().togglePlay();
-        return;
-      }
-      if (event.code === "ArrowUp") {
-        event.preventDefault();
-        const { volume, setVolume } = usePlayerStore.getState();
-        setVolume(Math.min(1, volume + 0.05));
-        return;
-      }
-      if (event.code === "ArrowDown") {
-        event.preventDefault();
-        const { volume, setVolume } = usePlayerStore.getState();
-        setVolume(Math.max(0, volume - 0.05));
-        return;
-      }
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  // Global shortcuts are handled by useShortcuts.
 
   const dragActive = draggingTrackIds.length > 0;
 
@@ -102,7 +88,7 @@ export const Layout = () => {
 
   return (
     <div
-      className="app-shell"
+      className={`app-shell${settingsOpen ? " app-shell--settings-open" : ""}`}
       onDragOver={handleAppDragOver}
       onDrop={handleAppDrop}
       onContextMenu={(e) => e.preventDefault()}
@@ -112,15 +98,21 @@ export const Layout = () => {
         onNavigate={(path) => navigate(path)}
       />
       <div className="app-main">
-        <TopBar />
+        <TopBar
+          isSettingsOpen={settingsOpen}
+          onOpenSettings={() => setSettingsOpen(true)}
+          onCloseSettings={() => setSettingsOpen(false)}
+        />
         <div className="app-content">
           <Outlet context={dragContext} />
         </div>
       </div>
-      <PlayerBar
-        queuePanelOpen={queuePanelOpen}
-        onToggleQueuePanel={() => setQueuePanelOpen((v) => !v)}
-      />
+      {!settingsOpen && (
+        <PlayerBar
+          queuePanelOpen={queuePanelOpen}
+          onToggleQueuePanel={() => setQueuePanelOpen((v) => !v)}
+        />
+      )}
       {queuePanelOpen && (
         <QueuePanel onClose={() => setQueuePanelOpen(false)} />
       )}
@@ -131,6 +123,10 @@ export const Layout = () => {
           onClose={() => setDraggingTrackIds([])}
         />
       )}
+      <SettingsModal
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+      />
     </div>
   );
 };

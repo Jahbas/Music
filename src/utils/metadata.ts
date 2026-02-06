@@ -5,6 +5,7 @@ export type ParsedMetadata = {
   artist: string;
   album: string;
   duration: number;
+  year?: number;
   artworkBlob?: Blob;
 };
 
@@ -69,6 +70,19 @@ export const parseAudioMetadata = async (file: File): Promise<ParsedMetadata> =>
       );
     const album = rawAlbum || "Unknown Album";
 
+    let year: number | undefined;
+    if (typeof common.year === "number" && Number.isFinite(common.year)) {
+      year = common.year;
+    } else if (typeof (common as any).date === "string") {
+      const match = (common as any).date.match(/(\d{4})/);
+      if (match) {
+        const parsed = Number(match[1]);
+        if (Number.isFinite(parsed)) {
+          year = parsed;
+        }
+      }
+    }
+
     const duration = metadata.format.duration
       ? Math.round(metadata.format.duration)
       : await readDurationWithAudio(file);
@@ -85,7 +99,7 @@ export const parseAudioMetadata = async (file: File): Promise<ParsedMetadata> =>
       ? new Blob([preferredPicture.data], { type: preferredPicture.format })
       : undefined;
 
-    return { title, artist, album, duration, artworkBlob };
+    return { title, artist, album, duration, year, artworkBlob };
   } catch (error) {
     console.error("Failed to parse audio metadata", error);
     return {

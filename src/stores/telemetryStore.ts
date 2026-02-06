@@ -1,9 +1,13 @@
 import { create } from "zustand";
+import { getTelemetryEnabled } from "../utils/preferences";
 
 const STORAGE_KEY = "app-telemetry";
 const MAX_SESSIONS = 500;
 const MAX_ROUTE_HISTORY = 200;
 const MAX_SEARCH_HISTORY = 200;
+const PERSIST_DEBOUNCE_MS = 2000;
+
+let persistTimeout: number | null = null;
 
 export type TelemetrySession = {
   id: string;
@@ -55,6 +59,8 @@ type TelemetryState = {
     playPauseToggleCount: number;
     lastPlayResumedAt: number | null;
   } | null;
+  snapshotCache: TelemetrySnapshot | null;
+  snapshotDirty: boolean;
   recordVisit: () => void;
   startSession: () => void;
   endSession: () => void;
@@ -66,6 +72,7 @@ type TelemetryState = {
   recordSkipNext: () => void;
   recordSkipPrev: () => void;
   recordPlayPauseToggle: () => void;
+  clearAll: () => void;
   getSnapshot: () => TelemetrySnapshot;
   hydrate: () => void;
   persist: () => void;
@@ -99,15 +106,19 @@ export const useTelemetryStore = create<TelemetryState>((set, get) => ({
   lastVisitAt: null,
   sessions: [],
   currentSession: null,
+  snapshotCache: null,
+  snapshotDirty: true,
 
   recordVisit: () => {
+    if (!getTelemetryEnabled()) return;
     const { totalVisits, persist } = get();
     const now = Date.now();
-    set({ totalVisits: totalVisits + 1, lastVisitAt: now });
+    set({ totalVisits: totalVisits + 1, lastVisitAt: now, snapshotDirty: true });
     persist();
   },
 
   startSession: () => {
+    if (!getTelemetryEnabled()) return;
     const { sessions, persist } = get();
     const id = generateSessionId();
     const startedAt = Date.now();
@@ -129,6 +140,7 @@ export const useTelemetryStore = create<TelemetryState>((set, get) => ({
   },
 
   endSession: () => {
+    if (!getTelemetryEnabled()) return;
     const { currentSession, sessions, persist } = get();
     if (!currentSession) return;
     get().flushListeningTime();
@@ -147,14 +159,37 @@ export const useTelemetryStore = create<TelemetryState>((set, get) => ({
       skipPrevCount: currentSession.skipPrevCount,
       playPauseToggleCount: currentSession.playPauseToggleCount,
     };
+    // #region agent log
+    fetch("http://127.0.0.1:7242/ingest/93a2f2cb-65cc-49d7-a7e3-1399a3dc801c", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sessionId: "debug-session",
+        runId: "initial",
+        hypothesisId: "H1",
+        location: "src/stores/telemetryStore.ts:142",
+        message: "Telemetry session ended",
+        data: {
+          id: completed.id,
+          sessionDurationMs,
+          listeningSeconds: completed.listeningSeconds,
+          pathHistoryLength: completed.pathHistory.length,
+          searchQueriesLength: completed.searchQueries.length,
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
     set({
       currentSession: null,
       sessions: [...sessions, completed].slice(-MAX_SESSIONS),
+      snapshotDirty: true,
     });
     persist();
   },
 
   setPlayState: (isPlaying: boolean) => {
+    if (!getTelemetryEnabled()) return;
     const { currentSession, flushListeningTime } = get();
     if (!currentSession) return;
     if (isPlaying) {
@@ -176,6 +211,7 @@ export const useTelemetryStore = create<TelemetryState>((set, get) => ({
   },
 
   flushListeningTime: () => {
+    if (!getTelemetryEnabled()) return;
     const { currentSession } = get();
     if (!currentSession?.lastPlayResumedAt) return;
     const now = Date.now();
@@ -190,6 +226,7 @@ export const useTelemetryStore = create<TelemetryState>((set, get) => ({
   },
 
   recordRoute: (path: string) => {
+    if (!getTelemetryEnabled()) return;
     const { currentSession } = get();
     if (!currentSession) return;
     const pathHistory = [...currentSession.pathHistory];
@@ -205,6 +242,7 @@ export const useTelemetryStore = create<TelemetryState>((set, get) => ({
   },
 
   recordSearch: (query: string) => {
+    if (!getTelemetryEnabled()) return;
     const trimmed = query.trim();
     if (!trimmed) return;
     const { currentSession } = get();
@@ -219,6 +257,7 @@ export const useTelemetryStore = create<TelemetryState>((set, get) => ({
   },
 
   recordTrackPlay: () => {
+    if (!getTelemetryEnabled()) return;
     const { currentSession } = get();
     if (!currentSession) return;
     set({
@@ -230,6 +269,7 @@ export const useTelemetryStore = create<TelemetryState>((set, get) => ({
   },
 
   recordSkipNext: () => {
+    if (!getTelemetryEnabled()) return;
     const { currentSession } = get();
     if (!currentSession) return;
     set({
@@ -241,6 +281,7 @@ export const useTelemetryStore = create<TelemetryState>((set, get) => ({
   },
 
   recordSkipPrev: () => {
+    if (!getTelemetryEnabled()) return;
     const { currentSession } = get();
     if (!currentSession) return;
     set({
@@ -252,6 +293,7 @@ export const useTelemetryStore = create<TelemetryState>((set, get) => ({
   },
 
   recordPlayPauseToggle: () => {
+    if (!getTelemetryEnabled()) return;
     const { currentSession } = get();
     if (!currentSession) return;
     set({
@@ -263,7 +305,13 @@ export const useTelemetryStore = create<TelemetryState>((set, get) => ({
   },
 
   getSnapshot: (): TelemetrySnapshot => {
-    const { totalVisits, lastVisitAt, sessions, currentSession } = get();
+    const { totalVisits, lastVisitAt, sessions, currentSession, snapshotCache, snapshotDirty } =
+      get();
+
+    if (!snapshotDirty && snapshotCache) {
+      return snapshotCache;
+    }
+
     const completed = sessions;
     const totalListeningSecondsAllTime = completed.reduce(
       (sum, s) => sum + s.listeningSeconds,
@@ -301,7 +349,7 @@ export const useTelemetryStore = create<TelemetryState>((set, get) => ({
         ? Math.max(...completed.map((s) => s.endedAt ?? 0))
         : null;
 
-    return {
+    const snapshot: TelemetrySnapshot = {
       totalVisits,
       totalSessions: sessionCount,
       sessions: completed,
@@ -314,22 +362,77 @@ export const useTelemetryStore = create<TelemetryState>((set, get) => ({
       lastVisitAt,
       lastSessionEndedAt,
     };
+
+    set({ snapshotCache: snapshot, snapshotDirty: false });
+
+    return snapshot;
+  },
+
+  clearAll: () => {
+    set({
+      totalVisits: 0,
+      lastVisitAt: null,
+      sessions: [],
+      currentSession: null,
+      snapshotCache: null,
+      snapshotDirty: true,
+    });
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // ignore
+    }
   },
 
   hydrate: () => {
     const { totalVisits, sessions, lastVisitAt } = loadStored();
-    set({ totalVisits, sessions, lastVisitAt });
+    set({ totalVisits, sessions, lastVisitAt, snapshotDirty: true, snapshotCache: null });
   },
 
   persist: () => {
     try {
       const { totalVisits, sessions, lastVisitAt } = get();
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({ totalVisits, sessions, lastVisitAt })
-      );
+      const payload: StoredTelemetry = {
+        totalVisits,
+        sessions: sessions.slice(-MAX_SESSIONS),
+        lastVisitAt,
+      };
+
+      if (persistTimeout != null) {
+        window.clearTimeout(persistTimeout);
+      }
+
+      persistTimeout = window.setTimeout(() => {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+          // #region agent log
+          fetch("http://127.0.0.1:7242/ingest/93a2f2cb-65cc-49d7-a7e3-1399a3dc801c", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              sessionId: "debug-session",
+              runId: "initial",
+              hypothesisId: "H2",
+              location: "src/stores/telemetryStore.ts:384",
+              message: "Telemetry persisted to localStorage",
+              data: {
+                totalVisits,
+                sessionCount: sessions.length,
+              },
+              timestamp: Date.now(),
+            }),
+          }).catch(() => {});
+          // #endregion
+        } catch {
+        } finally {
+          persistTimeout = null;
+        }
+      }, PERSIST_DEBOUNCE_MS);
     } catch {
-      // ignore
+      if (persistTimeout != null) {
+        window.clearTimeout(persistTimeout);
+        persistTimeout = null;
+      }
     }
   },
 }));
