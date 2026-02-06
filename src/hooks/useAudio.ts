@@ -3,8 +3,7 @@ import { useLibraryStore } from "../stores/libraryStore";
 import { usePlayerStore } from "../stores/playerStore";
 import { usePlayHistoryStore } from "../stores/playHistoryStore";
 import { useAudioSettingsStore } from "../stores/audioSettingsStore";
-import { audioBlobDb, trackDb } from "../db/db";
-import { useSharedTracksStore } from "../stores/sharedTracksStore";
+import { trackDb } from "../db/db";
 
 const getTrackUrl = async (trackId: string | null) => {
   if (!trackId) {
@@ -31,20 +30,6 @@ const getTrackUrl = async (trackId: string | null) => {
     } catch {
       return null;
     }
-  }
-
-  const sharedState = useSharedTracksStore.getState();
-  const sharedTrack =
-    sharedState.tracks.find((t) => t.originalTrackId === trackId || t.id === trackId) ?? null;
-  if (sharedTrack) {
-    if (sharedTrack.audioBlob) {
-      return URL.createObjectURL(sharedTrack.audioBlob);
-    }
-    const blobEntry = await audioBlobDb.get(sharedTrack.audioBlobId);
-    if (!blobEntry) {
-      return null;
-    }
-    return URL.createObjectURL(blobEntry.blob);
   }
 
   return null;
